@@ -408,30 +408,41 @@
         return Boolean(cmsRoot && cmsRoot.childElementCount > 0 && cmsRoot.querySelector('*'));
       };
 
-      const isEditorRoute = () => {
-        const route = window.location.pathname + window.location.hash;
-        return /\/collections\/[^/]+\/entries\//.test(route) || /#\/collections\/[^/]+\/entries\//.test(route);
+      const getCmsRoute = () => {
+        const route = window.location.hash.replace(/^#/, '').replace(/\/+$/, '');
+        return route || '/';
+      };
+
+      const shouldDockAdminShell = () => {
+        const route = getCmsRoute();
+        return route === '/' || route === '/collections' || /^\/collections\/[^/]+$/.test(route);
       };
 
       const syncAdminShellState = () => {
         if (!hasRenderedCms()) return;
-        if (isEditorRoute()) {
-          hideAdminShell();
+        if (shouldDockAdminShell()) {
+          dockAdminShell();
           return;
         }
-        dockAdminShell();
+        hideAdminShell();
+      };
+
+      const scheduleAdminShellSync = () => {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(syncAdminShellState);
+        });
       };
 
       const shellObserver = new MutationObserver(() => {
         if (hasRenderedCms()) {
-          syncAdminShellState();
+          scheduleAdminShellSync();
         }
       });
 
       shellObserver.observe(document.body, { childList: true, subtree: true });
 
-      window.addEventListener('hashchange', syncAdminShellState);
-      window.addEventListener('popstate', syncAdminShellState);
+      window.addEventListener('hashchange', scheduleAdminShellSync);
+      window.addEventListener('popstate', scheduleAdminShellSync);
 
       if (window.CMS) {
         window.CMS.init();
