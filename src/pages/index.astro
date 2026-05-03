@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import TagList from '../components/TagList.astro';
+import { getFeaturedPosts, getRecentPosts, getTagsWithCounts } from '../lib/blog';
+import { withBase } from '../lib/site';
+
+const [featuredPosts, recentPosts, tags] = await Promise.all([
+  getFeaturedPosts(),
+  getRecentPosts(4),
+  getTagsWithCounts()
+]);
+---
+<BaseLayout>
+  <section class="grid gap-10 rounded-[2rem] border border-zinc-200/70 bg-white/75 p-8 shadow-card md:grid-cols-[minmax(0,1fr)_220px] md:p-12 dark:border-zinc-800 dark:bg-zinc-900/70">
+    <div>
+      <p class="text-sm uppercase tracking-[0.2em] text-accent">Personal Tech Blog</p>
+      <h1 class="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white md:text-6xl">写代码、做项目，也整理一路上值得留下来的思考。</h1>
+      <p class="mt-6 max-w-2xl text-base leading-8 text-zinc-600 dark:text-zinc-300 md:text-lg">这里记录开发中的工具、踩过的坑、偏工程化的实践，还有一些能让效率持续变好的小方法。</p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href={withBase('/posts')} class="rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-accent dark:bg-white dark:text-zinc-950">开始阅读</a>
+        <a href={withBase('/about')} class="rounded-full border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-700 transition hover:border-accent hover:text-accent dark:border-zinc-800 dark:text-zinc-200">关于我</a>
+      </div>
+    </div>
+    <div class="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-zinc-950/80">
+      <p class="text-sm font-medium text-zinc-900 dark:text-white">写作焦点</p>
+      <ul class="mt-4 space-y-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+        <li>嵌入式与底层工具链</li>
+        <li>工程效率与自动化</li>
+        <li>前端与内容系统实践</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="mt-16">
+    <div class="mb-6 flex items-center justify-between">
+      <h2 class="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">精选文章</h2>
+      <a href={withBase('/posts')} class="text-sm text-zinc-500 transition hover:text-accent dark:text-zinc-400">查看全部</a>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {featuredPosts.map((post) => <PostCard post={post} />)}
+    </div>
+  </section>
+
+  <section class="mt-16 grid gap-10 xl:grid-cols-[minmax(0,1fr)_280px]">
+    <div>
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">最新文章</h2>
+      </div>
+      <div class="space-y-6">
+        {recentPosts.map((post) => <PostCard post={post} />)}
+      </div>
+    </div>
+
+    <aside class="rounded-[2rem] border border-zinc-200/70 bg-white/75 p-6 shadow-card dark:border-zinc-800 dark:bg-zinc-900/70">
+      <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">常用标签</h2>
+      <p class="mt-2 text-sm leading-7 text-zinc-600 dark:text-zinc-300">从工程、工具到前端实践，这里按主题整理文章。</p>
+      <div class="mt-6">
+        <TagList tags={tags.slice(0, 8)} />
+      </div>
+    </aside>
+  </section>
+</BaseLayout>

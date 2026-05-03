@@ -2,6 +2,7 @@ node_modules/
 dist/
 .astro/
 coverage/
+worker/decap-oauth/.wrangler/
 .env
 .env.*
 *.log

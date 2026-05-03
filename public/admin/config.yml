@@ -3,10 +3,8 @@ backend:
   name: github
   repo: PWMPro-a/my-blog
   branch: main
-  # GitHub Pages 只托管静态文件，线上登录发布还需要单独的 OAuth 服务。
-  # 配好后把下面两行改成真实地址：
-  # base_url: https://your-oauth-service.example.com
-  # auth_endpoint: auth
+  base_url: https://decap-oauth-worker.251873620.workers.dev
+  auth_endpoint: auth
 
 site_url: https://pwmpro-a.github.io/my-blog
 display_url: https://pwmpro-a.github.io/my-blog

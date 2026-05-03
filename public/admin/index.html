@@ -48,7 +48,7 @@
         try {
           const response = await fetch('./config.yml', { cache: 'no-store' });
           const config = await response.text();
-          const hasBaseUrl = /^\s*base_url:\s+https?:\/\/(?!your-oauth-service)/m.test(config);
+          const hasBaseUrl = /^\s*base_url:\s+https?:\/\/(?!.*<your-)/m.test(config);
           const hasAuthEndpoint = /^\s*auth_endpoint:\s+\S+/m.test(config);
 
           if (!hasBaseUrl || !hasAuthEndpoint) {
