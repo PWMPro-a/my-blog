@@ -1,0 +1,22 @@
+---
+import { siteConfig, withBase } from '../lib/site';
+import ThemeToggle from './ThemeToggle.astro';
+---
+<header class="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
+    <a href={withBase('/')} class="text-base font-semibold tracking-tight text-zinc-950 dark:text-white">{siteConfig.title}</a>
+    <div class="flex items-center gap-4">
+      <nav class="hidden items-center gap-5 text-sm text-zinc-600 md:flex dark:text-zinc-300">
+        {siteConfig.nav.map((item) => (
+          <a href={withBase(item.href)} class="transition hover:text-accent">{item.label}</a>
+        ))}
+      </nav>
+      {siteConfig.admin.enabled && (
+        <a href={withBase(siteConfig.admin.path)} class="hidden rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent md:inline-flex dark:bg-white dark:text-zinc-950">
+          {siteConfig.admin.label}
+        </a>
+      )}
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

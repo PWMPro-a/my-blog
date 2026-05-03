@@ -1,0 +1,21 @@
+---
+import { withBase } from '../lib/site';
+
+interface TagItem {
+  tag: string;
+  count?: number;
+}
+
+interface Props {
+  tags: TagItem[];
+}
+
+const { tags } = Astro.props;
+---
+<div class="flex flex-wrap gap-3">
+  {tags.map(({ tag, count }) => (
+    <a href={withBase(`/tags/${tag}/`)} class="rounded-full border border-zinc-200/80 px-3 py-1 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-zinc-800 dark:text-zinc-300">
+      #{tag}{typeof count === 'number' ? ` · ${count}` : ''}
+    </a>
+  ))}
+</div>

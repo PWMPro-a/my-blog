@@ -1,0 +1,49 @@
+<button
+  type="button"
+  data-theme-toggle
+  class="inline-flex items-center gap-2 rounded-full border border-zinc-200/80 bg-white/80 px-3 py-2 text-sm text-zinc-700 transition hover:border-accent hover:text-accent dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-200"
+  aria-label="切换主题"
+>
+  <span data-theme-label>主题</span>
+</button>
+
+<script is:inline>
+  const themeKey = 'theme';
+
+  const applyTheme = (theme) => {
+    const isDark = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem(themeKey, theme);
+    document.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme } }));
+  };
+
+  const getPreferredTheme = () => {
+    const storedTheme = localStorage.getItem(themeKey);
+    if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
+
+  const updateLabel = () => {
+    const theme = document.documentElement.classList.contains('dark') ? '深色' : '浅色';
+    document.querySelectorAll('[data-theme-label]').forEach((node) => {
+      node.textContent = theme;
+    });
+  };
+
+  updateLabel();
+
+  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const nextTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      updateLabel();
+    });
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (!localStorage.getItem(themeKey)) {
+      applyTheme(getPreferredTheme());
+      updateLabel();
+    }
+  });
+</script>

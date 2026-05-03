@@ -1,0 +1,13 @@
+---
+import { siteConfig } from '../lib/site';
+---
+<footer class="border-t border-zinc-200/70 py-8 dark:border-zinc-800">
+  <div class="mx-auto flex max-w-6xl flex-col gap-3 px-6 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between dark:text-zinc-400">
+    <p>© {new Date().getFullYear()} {siteConfig.author}. Built with Astro.</p>
+    <div class="flex items-center gap-4">
+      {siteConfig.socialLinks.map((link) => (
+        <a href={link.href} class="transition hover:text-accent">{link.label}</a>
+      ))}
+    </div>
+  </div>
+</footer>

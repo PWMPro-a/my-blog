@@ -1,0 +1,69 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import TagList from '../components/TagList.astro';
+import GiscusComments from '../components/GiscusComments.astro';
+import { formatDate } from '../lib/dates';
+import { withBase } from '../lib/site';
+import type { BlogEntry } from '../lib/blog';
+import type { TocItem } from '../lib/toc';
+
+interface Props {
+  post: BlogEntry;
+  tocItems: TocItem[];
+  previous?: BlogEntry;
+  next?: BlogEntry;
+}
+
+const { post, tocItems, previous, next } = Astro.props;
+---
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  pathname={`/posts/${post.slug}/`}
+  type="article"
+  publishedTime={post.data.pubDate.toISOString()}
+  updatedTime={post.data.updatedDate?.toISOString()}
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
+    <article>
+      <header class="mb-10 border-b border-zinc-200/70 pb-8 dark:border-zinc-800">
+        <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+          <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+          <span>·</span>
+          <span>{post.data.tags.join(' / ')}</span>
+        </div>
+        <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white md:text-5xl">{post.data.title}</h1>
+        <p class="mt-4 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">{post.data.description}</p>
+        <div class="mt-6">
+          <TagList tags={post.data.tags.map((tag) => ({ tag }))} />
+        </div>
+      </header>
+
+      <div class="prose prose-zinc max-w-none dark:prose-invert prose-pre:rounded-2xl prose-pre:border prose-pre:border-zinc-200/70 dark:prose-pre:border-zinc-800 prose-headings:scroll-mt-24 prose-a:text-accent">
+        <slot />
+      </div>
+
+      <div class="mt-10 grid gap-4 border-t border-zinc-200/70 pt-8 md:grid-cols-2 dark:border-zinc-800">
+        {previous ? (
+          <a href={withBase(`/posts/${previous.slug}/`)} class="rounded-3xl border border-zinc-200/70 p-5 transition hover:border-accent dark:border-zinc-800">
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">上一篇</p>
+            <p class="mt-2 font-medium text-zinc-900 dark:text-white">{previous.data.title}</p>
+          </a>
+        ) : <div />}
+        {next ? (
+          <a href={withBase(`/posts/${next.slug}/`)} class="rounded-3xl border border-zinc-200/70 p-5 text-right transition hover:border-accent dark:border-zinc-800">
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">下一篇</p>
+            <p class="mt-2 font-medium text-zinc-900 dark:text-white">{next.data.title}</p>
+          </a>
+        ) : <div />}
+      </div>
+
+      <GiscusComments />
+    </article>
+
+    <div class="lg:sticky lg:top-24 lg:h-fit">
+      <TableOfContents items={tocItems} />
+    </div>
+  </div>
+</BaseLayout>

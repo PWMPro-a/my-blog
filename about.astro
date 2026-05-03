@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="关于" description="关于这个博客和作者。" pathname="/about/">
+  <section class="mx-auto max-w-4xl rounded-[2rem] border border-zinc-200/70 bg-white/75 p-8 shadow-card md:p-12 dark:border-zinc-800 dark:bg-zinc-900/70">
+    <p class="text-sm uppercase tracking-[0.2em] text-accent">About</p>
+    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white">关于我</h1>
+    <div class="prose prose-zinc mt-8 max-w-none dark:prose-invert">
+      <p>你好，这里是一个偏工程实践的个人博客。我喜欢记录写代码时真正有价值的部分：问题是怎么被定位的，方案为什么这样选，以及哪些工具能稳定地提升效率。</p>
+      <p>内容会围绕嵌入式开发、工具链、自动化脚本、前端内容系统和个人工作流展开。相比只贴结论，我更希望把思考路径也保留下来，方便以后自己回看，也方便别人少走一点弯路。</p>
+      <h2>我会写什么</h2>
+      <ul>
+        <li>开发环境与工具配置</li>
+        <li>项目中的实际问题与修复过程</li>
+        <li>值得长期复用的小技巧与工作方法</li>
+      </ul>
+      <h2>这个站点怎么维护</h2>
+      <p>博客基于 Astro 构建，文章使用 Markdown 管理，整体以静态内容为主，尽量保持速度快、结构简单、长期容易维护。</p>
+    </div>
+  </section>
+</BaseLayout>

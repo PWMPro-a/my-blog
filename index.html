@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>博客后台</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        background: #09090b;
+      }
+      .admin-loading {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        color: #fafafa;
+        letter-spacing: 0.02em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-loading">正在加载博客后台…</div>
+    <noscript>博客后台需要启用 JavaScript。</noscript>
+    <script>
+      window.CMS_MANUAL_INIT = true;
+    </script>
+    <script src="https://unpkg.com/decap-cms@^3.5.0/dist/decap-cms.js"></script>
+    <script>
+      const productionHost = 'pwmpro-a.github.io';
+      const isProduction = window.location.hostname === productionHost;
+
+      const notice = document.createElement('div');
+      notice.style.cssText = 'display:none;max-width:720px;margin:24px auto 0;padding:16px 18px;border-radius:18px;background:#18181b;color:#e4e4e7;font:14px/1.7 Inter,system-ui,sans-serif;border:1px solid rgba(255,255,255,.08)';
+      notice.innerHTML = '线上发布还需要补 GitHub OAuth 服务。当前后台界面已接好 Decap CMS，但 GitHub Pages 只能托管静态页面，无法直接完成 GitHub 登录回调。把 <code>public/admin/config.yml</code> 里的 <code>base_url</code> 和 <code>auth_endpoint</code> 改成你的 OAuth 服务后，就可以在线登录并发布。';
+      document.body.appendChild(notice);
+
+      if (window.CMS) {
+        window.CMS.init();
+      }
+
+      const showOAuthNoticeIfNeeded = async () => {
+        if (!isProduction) return;
+
+        try {
+          const response = await fetch('./config.yml', { cache: 'no-store' });
+          const config = await response.text();
+          const hasBaseUrl = /^\s*base_url:\s+https?:\/\/(?!your-oauth-service)/m.test(config);
+          const hasAuthEndpoint = /^\s*auth_endpoint:\s+\S+/m.test(config);
+
+          if (!hasBaseUrl || !hasAuthEndpoint) {
+            notice.style.display = 'block';
+          }
+        } catch {
+          notice.style.display = 'block';
+        }
+      };
+
+      showOAuthNoticeIfNeeded();
+    </script>
+  </body>
+</html>

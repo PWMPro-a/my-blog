@@ -1,0 +1,46 @@
+local_backend: true
+backend:
+  name: github
+  repo: PWMPro-a/my-blog
+  branch: main
+  # GitHub Pages 只托管静态文件，线上登录发布还需要单独的 OAuth 服务。
+  # 配好后把下面两行改成真实地址：
+  # base_url: https://your-oauth-service.example.com
+  # auth_endpoint: auth
+
+site_url: https://pwmpro-a.github.io/my-blog
+display_url: https://pwmpro-a.github.io/my-blog
+logo_url: https://pwmpro-a.github.io/my-blog/favicon.svg
+media_folder: public/images/uploads
+public_folder: /images/uploads
+publish_mode: editorial_workflow
+slug:
+  encoding: ascii
+  clean_accents: true
+  sanitize_replacement: '-'
+
+collections:
+  - name: blog
+    label: 文章
+    label_singular: 文章
+    folder: src/content/blog
+    create: true
+    delete: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}-{{month}}-{{day}}-{{slug}}'
+    preview_path: posts/{{slug}}
+    summary: '{{title}} · {{pubDate}}'
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 描述, name: description, widget: text }
+      - { label: 发布时间, name: pubDate, widget: datetime, format: 'YYYY-MM-DD', time_format: false }
+      - { label: 更新时间, name: updatedDate, widget: datetime, required: false, format: 'YYYY-MM-DD', time_format: false }
+      - label: 标签
+        name: tags
+        widget: list
+        default: []
+      - { label: 草稿, name: draft, widget: boolean, default: false }
+      - { label: 精选, name: featured, widget: boolean, default: false }
+      - { label: 头图, name: heroImage, widget: image, required: false }
+      - { label: 正文, name: body, widget: markdown }

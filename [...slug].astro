@@ -1,0 +1,22 @@
+---
+import { getCollection, render } from 'astro:content';
+import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
+import { getAdjacentPosts } from '../../lib/blog';
+import { getTocFromHeadings } from '../../lib/toc';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post }
+  }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const tocItems = getTocFromHeadings(headings);
+const { previous, next } = await getAdjacentPosts(post.slug);
+---
+<BlogPostLayout post={post} tocItems={tocItems} previous={previous} next={next}>
+  <Content />
+</BlogPostLayout>
