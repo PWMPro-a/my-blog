@@ -61,6 +61,15 @@
         z-index: 1;
         min-height: 100vh;
         padding: 40px 20px 72px;
+        transition: opacity 180ms ease, visibility 180ms ease;
+      }
+
+      .admin-shell.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        position: fixed;
+        inset: 0;
       }
 
       .admin-loading {
@@ -324,10 +333,32 @@
       const isProduction = window.location.hostname === productionHost;
 
       const notice = document.getElementById('oauth-notice');
+      const adminShell = document.querySelector('.admin-shell');
       notice.innerHTML = `
         <strong>OAuth 服务尚未准备完成</strong>
         <p>线上发布还需要补 GitHub OAuth 服务。当前后台界面已接好 Decap CMS，但 GitHub Pages 只能托管静态页面，无法直接完成 GitHub 登录回调。把 <code>public/admin/config.yml</code> 里的 <code>base_url</code> 和 <code>auth_endpoint</code> 改成你的 OAuth 服务后，就可以在线登录并发布。</p>
       `;
+
+      const hideAdminShell = () => {
+        adminShell?.classList.add('is-hidden');
+      };
+
+      const revealNotice = () => {
+        notice.style.display = 'block';
+      };
+
+      const shellObserver = new MutationObserver(() => {
+        if (document.getElementById('nc-root')) {
+          hideAdminShell();
+          shellObserver.disconnect();
+        }
+      });
+
+      shellObserver.observe(document.body, { childList: true, subtree: true });
+
+      if (document.getElementById('nc-root')) {
+        hideAdminShell();
+      }
 
       if (window.CMS) {
         window.CMS.init();
@@ -343,10 +374,10 @@
           const hasAuthEndpoint = /^\s*auth_endpoint:\s+\S+/m.test(config);
 
           if (!hasBaseUrl || !hasAuthEndpoint) {
-            notice.style.display = 'block';
+            revealNotice();
           }
         } catch {
-          notice.style.display = 'block';
+          revealNotice();
         }
       };
 
