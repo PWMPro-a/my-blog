@@ -1,7 +1,5 @@
 ---
-import { isGiscusConfigured, siteConfig } from '../lib/site';
-
-const giscusConfigJson = JSON.stringify(siteConfig.giscus);
+import { isCommentsConfigured } from '../lib/site';
 ---
 <section class="mt-12 rounded-[2rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-8">
   <div class="mb-6 border-b border-zinc-200/80 pb-5 dark:border-slate-800">
@@ -9,56 +7,8 @@ const giscusConfigJson = JSON.stringify(siteConfig.giscus);
     <h2 class="mt-3 text-2xl font-semibold tracking-[-0.02em] text-zinc-950 dark:text-white">评论区</h2>
   </div>
 
-  {isGiscusConfigured ? (
-    <div id="giscus-thread"></div>
-  ) : (
-    <div class="space-y-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
-      <p class="font-medium text-zinc-900 dark:text-white">评论功能待配置</p>
-      <p>当前文章页已经预留评论区，填好 Giscus 的仓库与分类配置后，这里就会显示真实评论。</p>
-    </div>
-  )}
+  <div class="space-y-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+    <p class="font-medium text-zinc-900 dark:text-white">{isCommentsConfigured ? '评论系统已迁移' : '评论服务待配置'}</p>
+    <p>{isCommentsConfigured ? '当前站点已切换到自有评论系统，请使用新的评论组件入口。' : '当前文章页已经预留评论区，评论服务完成部署后这里会显示真实评论。'}</p>
+  </div>
 </section>
-
-{isGiscusConfigured && (
-  <script is:inline define:vars={{ giscusConfigJson }}>
-    const config = JSON.parse(giscusConfigJson);
-    const giscusTheme = () => document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-
-    const mountGiscus = () => {
-      if (document.querySelector('script[data-giscus]')) return;
-      const script = document.createElement('script');
-      script.src = 'https://giscus.app/client.js';
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      script.setAttribute('data-giscus', '');
-      script.setAttribute('data-repo', config.repo);
-      script.setAttribute('data-repo-id', config.repoId);
-      script.setAttribute('data-category', config.category);
-      script.setAttribute('data-category-id', config.categoryId);
-      script.setAttribute('data-mapping', config.mapping);
-      script.setAttribute('data-strict', config.strict);
-      script.setAttribute('data-reactions-enabled', config.reactionsEnabled);
-      script.setAttribute('data-input-position', config.inputPosition);
-      script.setAttribute('data-lang', config.lang);
-      script.setAttribute('data-theme', giscusTheme());
-      document.getElementById('giscus-thread')?.appendChild(script);
-    };
-
-    const syncGiscusTheme = () => {
-      const iframe = document.querySelector('iframe.giscus-frame');
-      iframe?.contentWindow?.postMessage(
-        {
-          giscus: {
-            setConfig: {
-              theme: giscusTheme()
-            }
-          }
-        },
-        'https://giscus.app'
-      );
-    };
-
-    mountGiscus();
-    document.addEventListener('theme-changed', syncGiscusTheme);
-  </script>
-)}

@@ -61,7 +61,12 @@
         z-index: 1;
         min-height: 100vh;
         padding: 40px 20px 72px;
-        transition: opacity 180ms ease, visibility 180ms ease;
+        transition: opacity 180ms ease, visibility 180ms ease, transform 180ms ease, padding 180ms ease;
+      }
+
+      .admin-shell.is-docked {
+        min-height: auto;
+        padding: clamp(18vh, 22vh, 28vh) 20px 24px;
       }
 
       .admin-shell.is-hidden {
@@ -80,6 +85,12 @@
         align-items: start;
         min-height: calc(100vh - 112px);
         grid-template-columns: minmax(0, 1.25fr) minmax(280px, 360px);
+        transition: min-height 180ms ease, gap 180ms ease;
+      }
+
+      .admin-shell.is-docked .admin-loading {
+        min-height: auto;
+        gap: 18px;
       }
 
       .admin-hero,
@@ -95,6 +106,11 @@
         border-radius: 32px;
         padding: 32px;
         overflow: hidden;
+        transition: padding 180ms ease, border-radius 180ms ease;
+      }
+
+      .admin-shell.is-docked .admin-hero {
+        padding: 24px 26px;
       }
 
       .admin-kicker,
@@ -119,6 +135,13 @@
         line-height: 0.98;
         letter-spacing: -0.05em;
         color: #fff;
+        transition: font-size 180ms ease, margin 180ms ease, max-width 180ms ease;
+      }
+
+      .admin-shell.is-docked .admin-title {
+        max-width: none;
+        margin-top: 14px;
+        font-size: clamp(2.2rem, 4vw, 3.4rem);
       }
 
       .admin-subtitle {
@@ -127,12 +150,26 @@
         font-size: 1rem;
         line-height: 1.9;
         color: #cbd5e1;
+        transition: margin 180ms ease, font-size 180ms ease;
+      }
+
+      .admin-shell.is-docked .admin-subtitle {
+        margin-top: 18px;
+        font-size: 0.96rem;
       }
 
       .admin-status-grid {
         display: grid;
         gap: 14px;
         margin-top: 28px;
+        transition: opacity 180ms ease, max-height 180ms ease, margin 180ms ease;
+      }
+
+      .admin-shell.is-docked .admin-status-grid {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        overflow: hidden;
       }
 
       .admin-status-card {
@@ -164,6 +201,15 @@
         display: flex;
         flex-direction: column;
         gap: 18px;
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+
+      .admin-shell.is-docked .admin-aside {
+        opacity: 0;
+        transform: translateY(-12px);
+        pointer-events: none;
+        position: absolute;
+        visibility: hidden;
       }
 
       .admin-badge {
@@ -317,6 +363,10 @@
               <p class="admin-meta-label">Writing principle</p>
               <p class="admin-meta-value">写结论，也写路径；保留足够的上下文，让文章能在未来继续复用。</p>
             </div>
+            <div class="admin-meta-block">
+              <p class="admin-meta-label">Moderation</p>
+              <p class="admin-meta-value"><a href="comments/">进入评论管理台</a>，审核游客评论、处理回复与垃圾评论。</p>
+            </div>
           </div>
         </aside>
       </div>
@@ -329,7 +379,7 @@
     </script>
     <script src="./decap-cms.js"></script>
     <script>
-      const productionHost = 'pwmpro-a.github.io';
+      const productionHost = 'ximo.qzz.io';
       const isProduction = window.location.hostname === productionHost;
 
       const notice = document.getElementById('oauth-notice');
@@ -340,7 +390,13 @@
       `;
 
       const hideAdminShell = () => {
+        adminShell?.classList.remove('is-docked');
         adminShell?.classList.add('is-hidden');
+      };
+
+      const dockAdminShell = () => {
+        adminShell?.classList.remove('is-hidden');
+        adminShell?.classList.add('is-docked');
       };
 
       const revealNotice = () => {
@@ -352,14 +408,30 @@
         return Boolean(cmsRoot && cmsRoot.childElementCount > 0 && cmsRoot.querySelector('*'));
       };
 
+      const isEditorRoute = () => {
+        const route = window.location.pathname + window.location.hash;
+        return /\/collections\/[^/]+\/entries\//.test(route) || /#\/collections\/[^/]+\/entries\//.test(route);
+      };
+
+      const syncAdminShellState = () => {
+        if (!hasRenderedCms()) return;
+        if (isEditorRoute()) {
+          hideAdminShell();
+          return;
+        }
+        dockAdminShell();
+      };
+
       const shellObserver = new MutationObserver(() => {
         if (hasRenderedCms()) {
-          hideAdminShell();
-          shellObserver.disconnect();
+          syncAdminShellState();
         }
       });
 
       shellObserver.observe(document.body, { childList: true, subtree: true });
+
+      window.addEventListener('hashchange', syncAdminShellState);
+      window.addEventListener('popstate', syncAdminShellState);
 
       if (window.CMS) {
         window.CMS.init();

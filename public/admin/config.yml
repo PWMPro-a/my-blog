@@ -5,11 +5,11 @@ backend:
   base_url: https://decap-oauth-worker.251873620.workers.dev
   auth_endpoint: auth
 
-site_url: https://pwmpro-a.github.io/my-blog
-display_url: https://pwmpro-a.github.io/my-blog
-logo_url: https://pwmpro-a.github.io/my-blog/favicon.svg
+site_url: https://ximo.qzz.io
+display_url: https://ximo.qzz.io
+logo_url: https://ximo.qzz.io/favicon.svg
 media_folder: public/images/uploads
-public_folder: /my-blog/images/uploads
+public_folder: /images/uploads
 publish_mode: editorial_workflow
 slug:
   encoding: ascii

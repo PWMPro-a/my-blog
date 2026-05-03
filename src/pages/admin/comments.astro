@@ -1,0 +1,419 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig, withBase } from '../../lib/site';
+
+const adminConfig = {
+  apiBaseUrl: siteConfig.comments.apiBaseUrl,
+  adminLoginUrl: `${siteConfig.comments.apiBaseUrl.replace(/\/$/, '')}/api/admin/login/github`,
+  adminPath: withBase(siteConfig.comments.adminPath),
+  decapAdminPath: withBase(siteConfig.admin.path),
+  commentsEnabled: siteConfig.comments.enabled,
+  commentsConfigured: siteConfig.comments.enabled && !siteConfig.comments.apiBaseUrl.includes('<your-')
+};
+const adminConfigJson = JSON.stringify(adminConfig);
+---
+<BaseLayout title="评论管理 · Lin Notes" description="审核、隐藏与整理博客评论。" pathname={siteConfig.comments.adminPath}>
+  <section class="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(320px,0.48fr)]">
+    <div class="rounded-[2rem] border border-white/60 bg-white/76 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/76 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Comments Control Room</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.05em] text-zinc-950 dark:text-white md:text-5xl">评论审核工作台</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">这里处理游客评论、楼中回复与审核状态。登录仍然使用 GitHub，但权限与会话由独立 comments Worker 管理，不影响现有 Decap CMS 发文链路。</p>
+      <div class="mt-8 flex flex-wrap gap-3 text-sm">
+        <a href={withBase(siteConfig.admin.path)} class="rounded-full border border-zinc-300/80 bg-white/80 px-4 py-2 font-medium text-zinc-900 hover:border-accent hover:text-accent dark:border-slate-700 dark:bg-slate-900/70 dark:text-zinc-100">返回发文后台</a>
+        <a href={withBase('/')} class="rounded-full border border-zinc-300/80 bg-transparent px-4 py-2 font-medium text-zinc-600 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-zinc-300">回到站点首页</a>
+      </div>
+    </div>
+
+    <aside class="rounded-[2rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Moderation Scope</p>
+      <div class="mt-5 space-y-5 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+        <div>
+          <p class="font-medium text-zinc-900 dark:text-white">状态流转</p>
+          <p class="mt-1">支持 pending、approved、rejected、spam、hidden 五种状态，前台只展示 approved。</p>
+        </div>
+        <div>
+          <p class="font-medium text-zinc-900 dark:text-white">回复上下文</p>
+          <p class="mt-1">审核列表会展示文章 slug 与父评论摘要，便于快速判断回复语境。</p>
+        </div>
+        <div>
+          <p class="font-medium text-zinc-900 dark:text-white">鉴权方式</p>
+          <p class="mt-1">仅允许白名单 GitHub 用户进入，Cookie 会话保存在 Worker 的 D1 数据库里。</p>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section id="comments-admin-root" class="mt-10"></section>
+
+  <script is:inline define:vars={{ adminConfigJson }}>
+    const config = JSON.parse(adminConfigJson);
+    const root = document.getElementById('comments-admin-root');
+
+    if (root) {
+      const state = {
+        session: null,
+        loading: true,
+        loadingComments: false,
+        error: '',
+        actionError: '',
+        items: [],
+        counts: {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          spam: 0,
+          hidden: 0
+        },
+        filters: {
+          status: 'pending',
+          slug: '',
+          page: 1,
+          pageSize: 20
+        },
+        total: 0,
+        busyCommentId: ''
+      };
+
+      const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+      const formatDate = (value) => {
+        try {
+          return new Intl.DateTimeFormat('zh-CN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }).format(new Date(value));
+        } catch {
+          return value;
+        }
+      };
+
+      const apiFetch = async (path, init = {}) => {
+        const response = await fetch(`${config.apiBaseUrl.replace(/\/$/, '')}${path}`, {
+          credentials: 'include',
+          ...init,
+          headers: {
+            'content-type': 'application/json',
+            ...(init.headers || {})
+          }
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || '请求失败。');
+        }
+        return data;
+      };
+
+      const statusOptions = [
+        ['pending', '待审核'],
+        ['approved', '已通过'],
+        ['rejected', '已拒绝'],
+        ['spam', '垃圾评论'],
+        ['hidden', '已隐藏'],
+        ['', '全部状态']
+      ];
+
+      const actionButtons = (item) => {
+        const actions = [
+          ['approve', '通过'],
+          ['reject', '拒绝'],
+          ['spam', '标垃圾'],
+          ['hide', '隐藏']
+        ];
+
+        return actions.map(([action, label]) => `
+          <button
+            type="button"
+            data-action="moderate"
+            data-comment-id="${item.id}"
+            data-moderation-action="${action}"
+            class="rounded-full border border-zinc-200/80 px-3 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-zinc-300"
+            ${state.busyCommentId === item.id ? 'disabled' : ''}
+          >${label}</button>
+        `).join('');
+      };
+
+      const renderStats = () => `
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          ${statusOptions.slice(0, 5).map(([status, label]) => `
+            <button type="button" data-action="filter-status" data-status="${status}" class="rounded-[1.5rem] border ${state.filters.status === status ? 'border-accent bg-accent/10' : 'border-zinc-200/80 bg-white/72 dark:border-slate-800 dark:bg-slate-950/72'} p-4 text-left shadow-sm">
+              <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">${label}</p>
+              <p class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">${state.counts[status] ?? 0}</p>
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      const renderFilters = () => `
+        <form id="comments-admin-filters" class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-6">
+          <div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto]">
+            <label class="block text-sm text-zinc-600 dark:text-zinc-300">
+              <span class="mb-2 block font-medium text-zinc-900 dark:text-white">状态筛选</span>
+              <select name="status" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+                ${statusOptions.map(([value, label]) => `<option value="${value}" ${state.filters.status === value ? 'selected' : ''}>${label}</option>`).join('')}
+              </select>
+            </label>
+            <label class="block text-sm text-zinc-600 dark:text-zinc-300">
+              <span class="mb-2 block font-medium text-zinc-900 dark:text-white">文章 slug</span>
+              <input name="slug" value="${escapeHtml(state.filters.slug)}" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="例如 embedded-toolchain-notes" />
+            </label>
+            <div class="flex items-end gap-3">
+              <button type="submit" class="rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white hover:bg-accent dark:bg-white dark:text-zinc-950 dark:hover:bg-accent">刷新列表</button>
+              <button type="button" data-action="logout" class="rounded-full border border-zinc-300/80 px-5 py-3 text-sm font-medium text-zinc-600 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-zinc-300">退出</button>
+            </div>
+          </div>
+        </form>
+      `;
+
+      const renderList = () => {
+        if (state.loadingComments) {
+          return '<div class="rounded-[1.75rem] border border-dashed border-zinc-200/80 px-5 py-10 text-center text-sm text-zinc-500 dark:border-slate-800 dark:text-zinc-400">评论列表加载中…</div>';
+        }
+
+        if (!state.items.length) {
+          return '<div class="rounded-[1.75rem] border border-dashed border-zinc-200/80 px-5 py-10 text-center text-sm leading-7 text-zinc-500 dark:border-slate-800 dark:text-zinc-400">当前筛选条件下没有评论。</div>';
+        }
+
+        return `
+          <div class="space-y-4">
+            ${state.items.map((item) => `
+              <article class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-6">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                      <span class="rounded-full border border-zinc-200/80 px-2 py-1 dark:border-slate-700">${escapeHtml(item.status)}</span>
+                      <span>${escapeHtml(item.postSlug || '')}</span>
+                      <span>·</span>
+                      <time datetime="${item.createdAt}">${formatDate(item.createdAt)}</time>
+                    </div>
+                    <h3 class="mt-3 text-lg font-semibold text-zinc-950 dark:text-white">${escapeHtml(item.authorName)}</h3>
+                    <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">${item.postTitle ? escapeHtml(item.postTitle) : '未同步文章标题'}${item.depth > 0 ? ` · 回复层级 ${item.depth + 1}` : ''}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2">${actionButtons(item)}</div>
+                </div>
+                ${item.parentAuthorName ? `<div class="mt-4 rounded-2xl border border-zinc-200/70 bg-zinc-50/80 px-4 py-3 text-sm leading-6 text-zinc-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-zinc-300"><p class="font-medium text-zinc-900 dark:text-white">回复给 ${escapeHtml(item.parentAuthorName)}</p><p class="mt-1">${escapeHtml(item.parentBodyExcerpt || '')}</p></div>` : ''}
+                <div class="mt-4 text-sm leading-7 text-zinc-700 dark:text-zinc-200">${item.bodyHtml}</div>
+              </article>
+            `).join('')}
+          </div>
+        `;
+      };
+
+      const renderPager = () => {
+        const pageCount = Math.max(1, Math.ceil(state.total / state.filters.pageSize));
+        return `
+          <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600 dark:text-zinc-300">
+            <p>第 ${state.filters.page} / ${pageCount} 页，共 ${state.total} 条评论</p>
+            <div class="flex gap-2">
+              <button type="button" data-action="page" data-page="${state.filters.page - 1}" class="rounded-full border border-zinc-200/80 px-4 py-2 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700" ${state.filters.page <= 1 ? 'disabled' : ''}>上一页</button>
+              <button type="button" data-action="page" data-page="${state.filters.page + 1}" class="rounded-full border border-zinc-200/80 px-4 py-2 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700" ${state.filters.page >= pageCount ? 'disabled' : ''}>下一页</button>
+            </div>
+          </div>
+        `;
+      };
+
+      const renderLoggedOut = () => {
+        root.innerHTML = `
+          <div class="rounded-[2rem] border border-zinc-200/80 bg-white/72 p-8 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-10">
+            <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Admin Access</p>
+            <h2 class="mt-4 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">使用 GitHub 登录评论后台</h2>
+            <p class="mt-4 max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-300">该页面只负责评论审核，不会替代现有 Decap CMS。登录后可以查看待审核评论、批准、拒绝、标记垃圾或隐藏已公开内容。</p>
+            ${state.error ? `<div class="mt-5 rounded-2xl border border-rose-300/70 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">${escapeHtml(state.error)}</div>` : ''}
+            <div class="mt-6 flex flex-wrap gap-3">
+              <a href="${config.adminLoginUrl}" class="rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white hover:bg-accent dark:bg-white dark:text-zinc-950 dark:hover:bg-accent">GitHub 登录</a>
+              <a href="${config.decapAdminPath}" class="rounded-full border border-zinc-300/80 px-5 py-3 text-sm font-medium text-zinc-600 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-zinc-300">前往 Decap CMS</a>
+            </div>
+          </div>
+        `;
+      };
+
+      const renderDashboard = () => {
+        root.innerHTML = `
+          <div class="space-y-6">
+            <section class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-6">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Authenticated Admin</p>
+                  <h2 class="mt-2 text-2xl font-semibold tracking-[-0.03em] text-zinc-950 dark:text-white">${escapeHtml(state.session.name || state.session.login)}</h2>
+                  <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">@${escapeHtml(state.session.login)} · 会话截止 ${formatDate(state.session.expiresAt)}</p>
+                </div>
+                ${state.session.avatarUrl ? `<img src="${state.session.avatarUrl}" alt="${escapeHtml(state.session.login)}" class="h-14 w-14 rounded-full border border-zinc-200/80 object-cover dark:border-slate-700" />` : ''}
+              </div>
+            </section>
+            ${renderStats()}
+            ${renderFilters()}
+            ${state.actionError ? `<div class="rounded-2xl border border-rose-300/70 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">${escapeHtml(state.actionError)}</div>` : ''}
+            ${renderList()}
+            ${renderPager()}
+          </div>
+        `;
+      };
+
+      const render = () => {
+        if (!config.commentsEnabled || !config.commentsConfigured) {
+          root.innerHTML = `
+            <div class="rounded-[2rem] border border-amber-300/70 bg-amber-50/90 p-8 shadow-panel dark:border-amber-500/30 dark:bg-amber-500/10 md:p-10">
+              <h2 class="text-2xl font-semibold text-amber-950 dark:text-amber-100">评论服务尚未配置完成</h2>
+              <p class="mt-4 text-sm leading-7 text-amber-900 dark:text-amber-100">请先在 <code>src/lib/site.ts</code> 和 comments Worker 的 <code>wrangler.toml</code> 中填写真实的 API 地址与 OAuth 配置，再使用这个后台页面。</p>
+            </div>
+          `;
+          return;
+        }
+
+        if (state.loading) {
+          root.innerHTML = '<div class="rounded-[1.75rem] border border-dashed border-zinc-200/80 px-5 py-10 text-center text-sm text-zinc-500 dark:border-slate-800 dark:text-zinc-400">评论后台加载中…</div>';
+          return;
+        }
+
+        if (!state.session) {
+          renderLoggedOut();
+          return;
+        }
+
+        renderDashboard();
+      };
+
+      const loadSession = async () => {
+        state.loading = true;
+        render();
+
+        try {
+          const data = await apiFetch('/api/admin/session', { method: 'GET' });
+          state.session = data.admin;
+          state.error = '';
+        } catch (error) {
+          state.session = null;
+          state.error = error instanceof Error ? error.message : '登录状态获取失败。';
+        } finally {
+          state.loading = false;
+          render();
+        }
+      };
+
+      const loadStats = async () => {
+        const data = await apiFetch('/api/admin/stats', { method: 'GET' });
+        state.counts = data.counts;
+      };
+
+      const loadComments = async () => {
+        state.loadingComments = true;
+        state.actionError = '';
+        render();
+
+        try {
+          const params = new URLSearchParams({
+            status: state.filters.status,
+            slug: state.filters.slug,
+            page: String(state.filters.page),
+            pageSize: String(state.filters.pageSize)
+          });
+          const data = await apiFetch(`/api/admin/comments?${params.toString()}`, { method: 'GET' });
+          state.items = Array.isArray(data.items) ? data.items : [];
+          state.total = Number(data.total || 0);
+        } catch (error) {
+          state.items = [];
+          state.total = 0;
+          state.actionError = error instanceof Error ? error.message : '评论列表获取失败。';
+        } finally {
+          state.loadingComments = false;
+          render();
+        }
+      };
+
+      const refreshDashboard = async () => {
+        if (!state.session) return;
+        await Promise.all([loadStats(), loadComments()]);
+        render();
+      };
+
+      const moderate = async (commentId, action) => {
+        state.busyCommentId = commentId;
+        state.actionError = '';
+        render();
+        try {
+          await apiFetch(`/api/admin/comments/${encodeURIComponent(commentId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ action })
+          });
+          await Promise.all([loadStats(), loadComments()]);
+        } catch (error) {
+          state.actionError = error instanceof Error ? error.message : '审核操作失败。';
+        } finally {
+          state.busyCommentId = '';
+          render();
+        }
+      };
+
+      const logout = async () => {
+        try {
+          await apiFetch('/api/admin/logout', { method: 'POST', body: JSON.stringify({}) });
+        } catch {
+        } finally {
+          state.session = null;
+          state.items = [];
+          state.total = 0;
+          render();
+        }
+      };
+
+      root.addEventListener('submit', (event) => {
+        if (!(event.target instanceof HTMLFormElement) || event.target.id !== 'comments-admin-filters') return;
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        state.filters.status = String(formData.get('status') || '');
+        state.filters.slug = String(formData.get('slug') || '').trim();
+        state.filters.page = 1;
+        loadComments();
+      });
+
+      root.addEventListener('click', (event) => {
+        const target = event.target instanceof HTMLElement ? event.target.closest('[data-action]') : null;
+        if (!(target instanceof HTMLElement)) return;
+
+        const action = target.dataset.action;
+        if (action === 'filter-status') {
+          state.filters.status = target.dataset.status || '';
+          state.filters.page = 1;
+          loadComments();
+          return;
+        }
+
+        if (action === 'page') {
+          const nextPage = Number(target.dataset.page || '1');
+          if (Number.isFinite(nextPage) && nextPage > 0) {
+            state.filters.page = nextPage;
+            loadComments();
+          }
+          return;
+        }
+
+        if (action === 'moderate') {
+          moderate(target.dataset.commentId || '', target.dataset.moderationAction || '');
+          return;
+        }
+
+        if (action === 'logout') {
+          logout();
+        }
+      });
+
+      const bootstrap = async () => {
+        render();
+        await loadSession();
+        if (state.session) {
+          await refreshDashboard();
+        }
+      };
+
+      bootstrap();
+    }
+  </script>
+</BaseLayout>

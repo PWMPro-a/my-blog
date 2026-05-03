@@ -7,8 +7,8 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 
 export default defineConfig({
-  site: 'https://pwmpro-a.github.io',
-  base: '/my-blog',
+  site: 'https://ximo.qzz.io',
+  base: '/',
   integrations: [tailwind(), mdx(), sitemap()],
   markdown: {
     remarkPlugins: [remarkGfm],

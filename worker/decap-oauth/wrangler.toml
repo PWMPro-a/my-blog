@@ -4,7 +4,7 @@ compatibility_date = "2026-05-03"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGIN = "https://pwmpro-a.github.io"
-ALLOWED_ADMIN_URL = "https://pwmpro-a.github.io/my-blog/admin/"
+ALLOWED_ORIGIN = "https://ximo.qzz.io"
+ALLOWED_ADMIN_URL = "https://ximo.qzz.io/admin/"
 OAUTH_REDIRECT_URI = "https://decap-oauth-worker.251873620.workers.dev/callback"
 GITHUB_CLIENT_ID = "Ov23lig2yq0ZQq0ktioJ"

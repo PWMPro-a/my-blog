@@ -2,7 +2,7 @@ export const siteConfig = {
   title: 'Lin Notes',
   description: '一个偏工程与工具的个人技术博客，把问题定位、工具链细节和长期有效的方法论整理成持续输出。',
   author: 'LENOVO',
-  siteUrl: 'https://pwmpro-a.github.io/my-blog/',
+  siteUrl: 'https://ximo.qzz.io/',
   locale: 'zh-CN',
   brand: {
     label: 'Engineering Field Journal',
@@ -45,24 +45,26 @@ export const siteConfig = {
     path: '/admin/',
     label: '发布文章'
   },
+  comments: {
+    enabled: true,
+    apiBaseUrl: 'https://comments-api-worker.251873620.workers.dev',
+    turnstileSiteKey: '0x4AAAAAADIbvinBtVXm-wlC',
+    maxDepth: 2,
+    adminPath: '/admin/comments/',
+    adminLabel: '评论管理'
+  },
   socialLinks: [
     { href: 'https://github.com/PWMPro-a/my-blog', label: 'GitHub' }
-  ],
-  giscus: {
-    repo: 'PWMPro-a/my-blog',
-    repoId: 'R_kgDOSSxbHg',
-    category: 'Announcements',
-    categoryId: 'DIC_kwDOSSxbHs4C8NvZ',
-    mapping: 'pathname',
-    strict: '0',
-    reactionsEnabled: '1',
-    inputPosition: 'top',
-    lang: 'zh-CN'
-  }
+  ]
 } as const;
 
 const basePath = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '');
 const absoluteUrlPattern = /^https?:\/\//i;
+const placeholderPattern = /<your-/i;
+
+function isConfiguredValue(value: string) {
+  return Boolean(value) && !placeholderPattern.test(value);
+}
 
 export function withBase(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -81,4 +83,5 @@ export function withSiteAssetUrl(path: string) {
   return absoluteUrlPattern.test(path) ? path : new URL(withBase(path), siteConfig.siteUrl).toString();
 }
 
-export const isGiscusConfigured = Object.values(siteConfig.giscus).slice(0, 4).every(Boolean);
+export const isCommentsConfigured = siteConfig.comments.enabled && isConfiguredValue(siteConfig.comments.apiBaseUrl);
+export const isTurnstileConfigured = isConfiguredValue(siteConfig.comments.turnstileSiteKey);
