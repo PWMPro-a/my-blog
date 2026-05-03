@@ -347,18 +347,19 @@
         notice.style.display = 'block';
       };
 
+      const hasRenderedCms = () => {
+        const cmsRoot = document.getElementById('nc-root');
+        return Boolean(cmsRoot && cmsRoot.childElementCount > 0 && cmsRoot.querySelector('*'));
+      };
+
       const shellObserver = new MutationObserver(() => {
-        if (document.getElementById('nc-root')) {
+        if (hasRenderedCms()) {
           hideAdminShell();
           shellObserver.disconnect();
         }
       });
 
       shellObserver.observe(document.body, { childList: true, subtree: true });
-
-      if (document.getElementById('nc-root')) {
-        hideAdminShell();
-      }
 
       if (window.CMS) {
         window.CMS.init();
