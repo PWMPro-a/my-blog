@@ -39,11 +39,13 @@ const { title, description, pathname, image, type, publishedTime, updatedTime } 
       updatedTime={updatedTime}
     />
   </head>
-  <body class="min-h-screen bg-zinc-50 text-zinc-700 antialiased dark:bg-zinc-950 dark:text-zinc-200">
-    <Header />
-    <main class="mx-auto min-h-[calc(100vh-160px)] max-w-6xl px-6 py-12">
-      <slot />
-    </main>
-    <Footer />
+  <body class="min-h-screen overflow-x-hidden antialiased">
+    <div class="relative min-h-screen">
+      <Header />
+      <main class="relative mx-auto min-h-[calc(100vh-15rem)] max-w-[1180px] px-5 py-10 md:px-8 md:py-14">
+        <slot />
+      </main>
+      <Footer />
+    </div>
   </body>
 </html>

@@ -2,21 +2,40 @@
 import { siteConfig, withBase } from '../lib/site';
 import ThemeToggle from './ThemeToggle.astro';
 ---
-<header class="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-  <div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-    <a href={withBase('/')} class="text-base font-semibold tracking-tight text-zinc-950 dark:text-white">{siteConfig.title}</a>
-    <div class="flex items-center gap-4">
-      <nav class="hidden items-center gap-5 text-sm text-zinc-600 md:flex dark:text-zinc-300">
+<header class="sticky top-0 z-40 border-b border-white/10 bg-white/70 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/70">
+  <div class="mx-auto max-w-[1180px] px-5 py-4 md:px-8 md:py-5">
+    <div class="flex items-start justify-between gap-4">
+      <a href={withBase('/')} class="group max-w-2xl">
+        <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">{siteConfig.brand.label}</p>
+        <div class="mt-2 flex flex-wrap items-end gap-x-4 gap-y-1">
+          <span class="text-lg font-semibold tracking-[0.02em] text-zinc-950 group-hover:text-accent dark:text-white md:text-xl">{siteConfig.title}</span>
+          <span class="text-xs uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400">{siteConfig.brand.status}</span>
+        </div>
+        <p class="mt-2 hidden text-sm leading-6 text-zinc-600 dark:text-zinc-300 md:block">{siteConfig.brand.authorRole}</p>
+      </a>
+      <div class="flex shrink-0 items-center gap-3">
+        {siteConfig.admin.enabled && (
+          <a
+            href={withBase(siteConfig.admin.path)}
+            class="hidden rounded-full border border-zinc-300/80 bg-white/75 px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:border-accent hover:text-accent dark:border-slate-700 dark:bg-slate-900/70 dark:text-zinc-100 md:inline-flex"
+          >
+            {siteConfig.admin.label}
+          </a>
+        )}
+        <ThemeToggle />
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-4 border-t border-zinc-200/70 pt-4 dark:border-slate-800/80 lg:flex-row lg:items-center lg:justify-between">
+      <nav class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-600 dark:text-zinc-300">
         {siteConfig.nav.map((item) => (
-          <a href={withBase(item.href)} class="transition hover:text-accent">{item.label}</a>
+          <a href={withBase(item.href)} class="font-medium tracking-[0.02em] hover:text-accent">{item.label}</a>
         ))}
+        {siteConfig.admin.enabled && (
+          <a href={withBase(siteConfig.admin.path)} class="text-zinc-500 hover:text-accent md:hidden">{siteConfig.admin.label}</a>
+        )}
       </nav>
-      {siteConfig.admin.enabled && (
-        <a href={withBase(siteConfig.admin.path)} class="hidden rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent md:inline-flex dark:bg-white dark:text-zinc-950">
-          {siteConfig.admin.label}
-        </a>
-      )}
-      <ThemeToggle />
+      <p class="max-w-xl text-xs leading-6 text-zinc-500 dark:text-zinc-400">{siteConfig.brand.headerBlurb}</p>
     </div>
   </div>
 </header>

@@ -7,16 +7,23 @@ import { withBase } from '../lib/site';
 const groups = await getArchiveGroups();
 ---
 <BaseLayout title="归档" description="按年份查看全部文章。" pathname="/archive/">
-  <section class="max-w-4xl">
-    <p class="text-sm uppercase tracking-[0.2em] text-accent">Archive</p>
-    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white">归档</h1>
-    <div class="mt-10 space-y-10">
+  <section class="max-w-5xl">
+    <div class="rounded-[2rem] border border-white/60 bg-white/72 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Archive</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">归档</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">按年份查看全部文章，把写作节奏和关注主题放回更长的时间线上观察。</p>
+    </div>
+
+    <div class="mt-10 space-y-8">
       {groups.map((group) => (
-        <section>
-          <h2 class="text-2xl font-semibold text-zinc-900 dark:text-white">{group.year}</h2>
-          <div class="mt-5 space-y-4 rounded-[1.5rem] border border-zinc-200/70 bg-white/75 p-6 dark:border-zinc-800 dark:bg-zinc-900/70">
+        <section class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-8">
+          <div class="flex items-end justify-between gap-4 border-b border-zinc-200/80 pb-5 dark:border-slate-800">
+            <h2 class="font-serif text-3xl text-zinc-950 dark:text-white">{group.year}</h2>
+            <span class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">{group.items.length} posts</span>
+          </div>
+          <div class="mt-5 space-y-2">
             {group.items.map((post) => (
-              <a href={withBase(`/posts/${post.slug}/`)} class="flex flex-col gap-1 rounded-2xl px-1 py-2 transition hover:text-accent md:flex-row md:items-center md:justify-between">
+              <a href={withBase(`/posts/${post.slug}/`)} class="flex flex-col gap-2 rounded-2xl border border-transparent px-3 py-3 hover:border-zinc-200 hover:bg-zinc-50/80 hover:text-accent dark:hover:border-slate-800 dark:hover:bg-slate-900/60 md:flex-row md:items-center md:justify-between">
                 <span class="font-medium text-zinc-900 dark:text-white">{post.data.title}</span>
                 <time class="text-sm text-zinc-500 dark:text-zinc-400" datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
               </a>

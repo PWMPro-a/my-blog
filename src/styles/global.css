@@ -4,10 +4,14 @@
 
 :root {
   color-scheme: light;
+  --page-bg: #f3f6f8;
+  --page-ink: #18181b;
 }
 
 :root.dark {
   color-scheme: dark;
+  --page-bg: #050816;
+  --page-ink: #e4e4e7;
 }
 
 html {
@@ -15,15 +19,56 @@ html {
 }
 
 body {
+  position: relative;
+  background-color: var(--page-bg);
+  color: var(--page-ink);
+  font-feature-settings: 'ss01' 1;
   background-image:
-    radial-gradient(circle at top, rgba(124, 58, 237, 0.08), transparent 36%),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 1));
+    radial-gradient(circle at top, rgba(127, 159, 187, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(243, 246, 248, 1));
 }
 
 html.dark body {
   background-image:
-    radial-gradient(circle at top, rgba(124, 58, 237, 0.14), transparent 28%),
-    linear-gradient(to bottom, rgba(9, 9, 11, 0.98), rgba(9, 9, 11, 1));
+    radial-gradient(circle at top, rgba(127, 159, 187, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(5, 8, 22, 0.96), rgba(3, 7, 18, 1));
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 36px 36px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 72%);
+}
+
+html.dark body::before {
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(100, 116, 139, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 139, 0.12) 1px, transparent 1px);
+}
+
+::selection {
+  background: rgba(127, 159, 187, 0.28);
+  color: #0f172a;
+}
+
+html.dark ::selection {
+  background: rgba(183, 206, 226, 0.28);
+  color: #f8fafc;
+}
+
+body,
+a,
+button {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 160ms;
 }
 
 .heading-anchor {

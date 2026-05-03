@@ -4,7 +4,7 @@ import TableOfContents from '../components/TableOfContents.astro';
 import TagList from '../components/TagList.astro';
 import GiscusComments from '../components/GiscusComments.astro';
 import { formatDate } from '../lib/dates';
-import { withBase } from '../lib/site';
+import { withAsset, withBase } from '../lib/site';
 import type { BlogEntry } from '../lib/blog';
 import type { TocItem } from '../lib/toc';
 
@@ -16,45 +16,53 @@ interface Props {
 }
 
 const { post, tocItems, previous, next } = Astro.props;
+const heroImage = post.data.heroImage ? withAsset(post.data.heroImage) : undefined;
 ---
 <BaseLayout
   title={post.data.title}
   description={post.data.description}
   pathname={`/posts/${post.slug}/`}
+  image={post.data.heroImage}
   type="article"
   publishedTime={post.data.pubDate.toISOString()}
   updatedTime={post.data.updatedDate?.toISOString()}
 >
-  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
     <article>
-      <header class="mb-10 border-b border-zinc-200/70 pb-8 dark:border-zinc-800">
-        <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+      <header class="rounded-[2rem] border border-white/60 bg-white/76 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/76 md:p-10">
+        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
           <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-          <span>·</span>
-          <span>{post.data.tags.join(' / ')}</span>
+          {post.data.updatedDate && <span>更新于 {formatDate(post.data.updatedDate)}</span>}
         </div>
-        <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white md:text-5xl">{post.data.title}</h1>
-        <p class="mt-4 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">{post.data.description}</p>
+        <h1 class="mt-5 max-w-4xl font-serif text-4xl leading-tight tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">{post.data.title}</h1>
+        <p class="mt-5 max-w-reading text-lg leading-8 text-zinc-600 dark:text-zinc-300">{post.data.description}</p>
         <div class="mt-6">
-          <TagList tags={post.data.tags.map((tag) => ({ tag }))} />
+          <TagList tags={post.data.tags.map((tag: string) => ({ tag }))} />
         </div>
+        {heroImage && (
+          <div class="mt-8 overflow-hidden rounded-[1.75rem] border border-zinc-200/80 dark:border-slate-800">
+            <img src={heroImage} alt={post.data.title} class="aspect-[16/8] w-full object-cover" />
+          </div>
+        )}
       </header>
 
-      <div class="prose prose-zinc max-w-none dark:prose-invert prose-pre:rounded-2xl prose-pre:border prose-pre:border-zinc-200/70 dark:prose-pre:border-zinc-800 prose-headings:scroll-mt-24 prose-a:text-accent">
-        <slot />
+      <div class="mt-10 rounded-[2rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-10">
+        <div class="prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-28 prose-a:text-accent">
+          <slot />
+        </div>
       </div>
 
-      <div class="mt-10 grid gap-4 border-t border-zinc-200/70 pt-8 md:grid-cols-2 dark:border-zinc-800">
+      <div class="mt-10 grid gap-4 md:grid-cols-2">
         {previous ? (
-          <a href={withBase(`/posts/${previous.slug}/`)} class="rounded-3xl border border-zinc-200/70 p-5 transition hover:border-accent dark:border-zinc-800">
-            <p class="text-sm text-zinc-500 dark:text-zinc-400">上一篇</p>
-            <p class="mt-2 font-medium text-zinc-900 dark:text-white">{previous.data.title}</p>
+          <a href={withBase(`/posts/${previous.slug}/`)} class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel hover:border-accent dark:border-slate-800 dark:bg-slate-950/72">
+            <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">上一篇</p>
+            <p class="mt-3 text-lg font-medium text-zinc-900 dark:text-white">{previous.data.title}</p>
           </a>
         ) : <div />}
         {next ? (
-          <a href={withBase(`/posts/${next.slug}/`)} class="rounded-3xl border border-zinc-200/70 p-5 text-right transition hover:border-accent dark:border-zinc-800">
-            <p class="text-sm text-zinc-500 dark:text-zinc-400">下一篇</p>
-            <p class="mt-2 font-medium text-zinc-900 dark:text-white">{next.data.title}</p>
+          <a href={withBase(`/posts/${next.slug}/`)} class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 text-right shadow-panel hover:border-accent dark:border-slate-800 dark:bg-slate-950/72">
+            <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">下一篇</p>
+            <p class="mt-3 text-lg font-medium text-zinc-900 dark:text-white">{next.data.title}</p>
           </a>
         ) : <div />}
       </div>
@@ -62,7 +70,7 @@ const { post, tocItems, previous, next } = Astro.props;
       <GiscusComments />
     </article>
 
-    <div class="lg:sticky lg:top-24 lg:h-fit">
+    <div class="lg:sticky lg:top-28 lg:h-fit">
       <TableOfContents items={tocItems} />
     </div>
   </div>

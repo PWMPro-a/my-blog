@@ -1,6 +1,15 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "baseUrl": "."
-  }
+    "baseUrl": ".",
+    "allowJs": false,
+    "checkJs": false
+  },
+  "exclude": [
+    "dist",
+    ".astro",
+    ".wrangler",
+    "worker",
+    "public/admin/**"
+  ]
 }

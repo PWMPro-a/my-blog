@@ -1,5 +1,5 @@
 ---
-import { siteConfig, withSiteUrl } from '../lib/site';
+import { siteConfig, withSiteAssetUrl, withSiteUrl } from '../lib/site';
 
 interface Props {
   title?: string;
@@ -23,7 +23,7 @@ const {
 
 const canonical = withSiteUrl(pathname);
 const pageTitle = title === siteConfig.title ? title : `${title} · ${siteConfig.title}`;
-const ogImage = image ? withSiteUrl(image) : undefined;
+const ogImage = image ? withSiteAssetUrl(image) : undefined;
 ---
 <title>{pageTitle}</title>
 <meta name="description" content={description} />

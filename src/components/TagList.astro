@@ -14,8 +14,11 @@ const { tags } = Astro.props;
 ---
 <div class="flex flex-wrap gap-3">
   {tags.map(({ tag, count }) => (
-    <a href={withBase(`/tags/${tag}/`)} class="rounded-full border border-zinc-200/80 px-3 py-1 text-sm text-zinc-600 transition hover:border-accent hover:text-accent dark:border-zinc-800 dark:text-zinc-300">
-      #{tag}{typeof count === 'number' ? ` · ${count}` : ''}
+    <a
+      href={withBase(`/tags/${encodeURIComponent(tag)}/`)}
+      class="rounded-full border border-zinc-200/80 bg-white/70 px-3.5 py-2 text-sm text-zinc-700 hover:border-accent hover:text-accent dark:border-slate-800 dark:bg-slate-900/60 dark:text-zinc-200"
+    >
+      <span class="font-medium">#{tag}</span>{typeof count === 'number' ? <span class="text-zinc-500 dark:text-zinc-400">{' '}· {count}</span> : null}
     </a>
   ))}
 </div>

@@ -1,21 +1,46 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../lib/site';
 ---
 <BaseLayout title="关于" description="关于这个博客和作者。" pathname="/about/">
-  <section class="mx-auto max-w-4xl rounded-[2rem] border border-zinc-200/70 bg-white/75 p-8 shadow-card md:p-12 dark:border-zinc-800 dark:bg-zinc-900/70">
-    <p class="text-sm uppercase tracking-[0.2em] text-accent">About</p>
-    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white">关于我</h1>
-    <div class="prose prose-zinc mt-8 max-w-none dark:prose-invert">
-      <p>你好，这里是一个偏工程实践的个人博客。我喜欢记录写代码时真正有价值的部分：问题是怎么被定位的，方案为什么这样选，以及哪些工具能稳定地提升效率。</p>
-      <p>内容会围绕嵌入式开发、工具链、自动化脚本、前端内容系统和个人工作流展开。相比只贴结论，我更希望把思考路径也保留下来，方便以后自己回看，也方便别人少走一点弯路。</p>
-      <h2>我会写什么</h2>
-      <ul>
-        <li>开发环境与工具配置</li>
-        <li>项目中的实际问题与修复过程</li>
-        <li>值得长期复用的小技巧与工作方法</li>
-      </ul>
-      <h2>这个站点怎么维护</h2>
-      <p>博客基于 Astro 构建，文章使用 Markdown 管理，整体以静态内容为主，尽量保持速度快、结构简单、长期容易维护。</p>
+  <section class="grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_320px]">
+    <div class="rounded-[2rem] border border-white/60 bg-white/72 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">About</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">关于我</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">这里不是简历式主页，而是一份持续更新的工程写作样本。我更关心问题如何被定位、方案为什么值得保留，以及哪些工具真正能长期提升效率。</p>
+
+      <div class="prose prose-zinc mt-10 max-w-none dark:prose-invert">
+        <p>我喜欢把开发过程中真正有价值的部分写下来：不是只给结论，而是连同判断路径、失败尝试与最终取舍一起记录。这样文章既能帮助当下的读者，也能在未来成为自己的可复用参考。</p>
+        <p>内容通常围绕嵌入式开发、工具链、自动化脚本、前端内容系统与个人工作流展开。它们看起来分散，但底层关注点是一致的：如何让复杂工作变得更可理解、更可维护、更能持续产出。</p>
+        <h2>我会写什么</h2>
+        <ul>
+          <li>开发环境与工具配置</li>
+          <li>项目中的实际问题与修复过程</li>
+          <li>值得长期复用的小技巧与工作方法</li>
+        </ul>
+        <h2>这个站点怎么维护</h2>
+        <p>博客基于 Astro 构建，文章用 Markdown 管理，评论由 Giscus 承载，发布侧则接入了 Decap CMS 与 GitHub Pages。整体目标不是堆功能，而是维持一个轻量、清晰、可长期演化的写作系统。</p>
+      </div>
     </div>
+
+    <aside class="space-y-6">
+      <section class="rounded-[1.75rem] border border-zinc-200/80 bg-zinc-50/75 p-6 dark:border-slate-800 dark:bg-slate-900/60">
+        <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Positioning</p>
+        <p class="mt-4 text-lg font-medium text-zinc-950 dark:text-white">{siteConfig.brand.authorRole}</p>
+        <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{siteConfig.brand.footerBlurb}</p>
+      </section>
+
+      <section class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72">
+        <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Focus Areas</p>
+        <div class="mt-5 space-y-4">
+          {siteConfig.brand.focusAreas.map((item) => (
+            <div>
+              <h2 class="text-base font-semibold text-zinc-950 dark:text-white">{item.title}</h2>
+              <p class="mt-2 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </aside>
   </section>
 </BaseLayout>

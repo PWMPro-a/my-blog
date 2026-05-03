@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getTagsWithCounts, getPostsByTag } from '../../lib/blog';
+import { getTagsWithCounts, getPostsByTag, type BlogEntry } from '../../lib/blog';
 
 export async function getStaticPaths() {
   const tags = await getTagsWithCounts();
@@ -11,16 +11,18 @@ export async function getStaticPaths() {
   }));
 }
 
-const { tag } = Astro.props;
+const { tag } = Astro.props as { tag: string };
 const posts = await getPostsByTag(tag);
 ---
 <BaseLayout title={`标签：${tag}`} description={`查看标签 ${tag} 下的全部文章。`} pathname={`/tags/${tag}/`}>
   <section>
-    <p class="text-sm uppercase tracking-[0.2em] text-accent">Tag</p>
-    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white">#{tag}</h1>
-    <p class="mt-4 text-base leading-8 text-zinc-600 dark:text-zinc-300">共 {posts.length} 篇文章。</p>
-    <div class="mt-8 space-y-6">
-      {posts.map((post) => <PostCard post={post} />)}
+    <div class="rounded-[2rem] border border-white/60 bg-white/72 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Tag</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">#{tag}</h1>
+      <p class="mt-5 text-base leading-8 text-zinc-600 dark:text-zinc-300">共 {posts.length} 篇文章，按时间倒序展开这个主题下的完整写作脉络。</p>
+    </div>
+    <div class="mt-10 space-y-6">
+      {posts.map((post: BlogEntry) => <PostCard post={post} />)}
     </div>
   </section>
 </BaseLayout>

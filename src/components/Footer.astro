@@ -1,13 +1,37 @@
 ---
-import { siteConfig } from '../lib/site';
+import { siteConfig, withBase } from '../lib/site';
 ---
-<footer class="border-t border-zinc-200/70 py-8 dark:border-zinc-800">
-  <div class="mx-auto flex max-w-6xl flex-col gap-3 px-6 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between dark:text-zinc-400">
-    <p>© {new Date().getFullYear()} {siteConfig.author}. Built with Astro.</p>
-    <div class="flex items-center gap-4">
-      {siteConfig.socialLinks.map((link) => (
-        <a href={link.href} class="transition hover:text-accent">{link.label}</a>
-      ))}
+<footer class="border-t border-zinc-200/70 pb-10 pt-12 dark:border-slate-800/80">
+  <div class="mx-auto grid max-w-[1180px] gap-8 px-5 md:px-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <div class="space-y-4">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">{siteConfig.brand.label}</p>
+      <h2 class="max-w-2xl font-serif text-3xl leading-tight text-zinc-950 dark:text-white md:text-4xl">{siteConfig.brand.closingNote}</h2>
+      <p class="max-w-2xl text-sm leading-7 text-zinc-600 dark:text-zinc-300">{siteConfig.brand.footerBlurb}</p>
     </div>
+
+    <div class="grid gap-6 sm:grid-cols-2">
+      <div>
+        <p class="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">Navigate</p>
+        <div class="mt-4 flex flex-col gap-3 text-sm text-zinc-700 dark:text-zinc-200">
+          {siteConfig.nav.map((item) => (
+            <a href={withBase(item.href)} class="hover:text-accent">{item.label}</a>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">Elsewhere</p>
+        <div class="mt-4 flex flex-col gap-3 text-sm text-zinc-700 dark:text-zinc-200">
+          {siteConfig.socialLinks.map((link) => (
+            <a href={link.href} class="hover:text-accent">{link.label}</a>
+          ))}
+          {siteConfig.admin.enabled && <a href={withBase(siteConfig.admin.path)} class="hover:text-accent">{siteConfig.admin.label}</a>}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mx-auto mt-10 flex max-w-[1180px] flex-col gap-3 px-5 text-xs uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400 md:px-8 md:flex-row md:items-center md:justify-between">
+    <p>© {new Date().getFullYear()} {siteConfig.author}</p>
+    <p>Built with Astro · Published via GitHub Pages</p>
   </div>
 </footer>

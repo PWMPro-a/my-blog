@@ -6,11 +6,13 @@ import { getTagsWithCounts } from '../../lib/blog';
 const tags = await getTagsWithCounts();
 ---
 <BaseLayout title="标签" description="按标签查看文章。" pathname="/tags/">
-  <section class="max-w-4xl">
-    <p class="text-sm uppercase tracking-[0.2em] text-accent">Tags</p>
-    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white">标签</h1>
-    <p class="mt-4 text-base leading-8 text-zinc-600 dark:text-zinc-300">按主题浏览内容，快速找到你关心的技术方向。</p>
-    <div class="mt-8">
+  <section class="max-w-5xl">
+    <div class="rounded-[2rem] border border-white/60 bg-white/72 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Tags</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">标签</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">按主题浏览内容，快速切换到你更关心的工程方向、工具类别或实践场景。</p>
+    </div>
+    <div class="mt-10 rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-8">
       <TagList tags={tags} />
     </div>
   </section>

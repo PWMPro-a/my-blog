@@ -1,19 +1,19 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getPublishedPosts } from '../../lib/blog';
+import { getPublishedPosts, type BlogEntry } from '../../lib/blog';
 
 const posts = await getPublishedPosts();
 ---
 <BaseLayout title="文章" description="全部文章列表。" pathname="/posts/">
   <section>
-    <div class="mb-10">
-      <p class="text-sm uppercase tracking-[0.2em] text-accent">Posts</p>
-      <h1 class="mt-4 text-4xl font-semibold tracking-tight text-zinc-950 dark:text-white">全部文章</h1>
-      <p class="mt-4 max-w-2xl text-base leading-8 text-zinc-600 dark:text-zinc-300">按发布时间倒序整理，方便快速浏览最近的写作内容。</p>
+    <div class="rounded-[2rem] border border-white/60 bg-white/72 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Posts</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">全部文章</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">按发布时间倒序整理，保留每一次问题定位、方案取舍与工具实践的写作记录。</p>
     </div>
-    <div class="space-y-6">
-      {posts.map((post) => <PostCard post={post} />)}
+    <div class="mt-10 space-y-6">
+      {posts.map((post: BlogEntry) => <PostCard post={post} />)}
     </div>
   </section>
 </BaseLayout>

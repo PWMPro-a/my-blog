@@ -1,22 +1,64 @@
 ---
 import { formatDate } from '../lib/dates';
-import { withBase } from '../lib/site';
+import { withAsset, withBase } from '../lib/site';
 import type { BlogEntry } from '../lib/blog';
 
 interface Props {
   post: BlogEntry;
+  variant?: 'default' | 'featured';
 }
 
-const { post } = Astro.props;
+const { post, variant = 'default' } = Astro.props;
+const href = withBase(`/posts/${post.slug}/`);
+const hasHeroImage = Boolean(post.data.heroImage);
+const imageSrc = post.data.heroImage ? withAsset(post.data.heroImage) : undefined;
+const isFeatured = variant === 'featured';
 ---
-<article class="rounded-3xl border border-zinc-200/70 bg-white/80 p-6 shadow-card transition hover:-translate-y-1 dark:border-zinc-800 dark:bg-zinc-900/80">
-  <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
-    <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-    <span>·</span>
-    <span>{post.data.tags.join(' / ')}</span>
+<article class:list={[
+  'group overflow-hidden rounded-[1.75rem] border backdrop-blur transition hover:-translate-y-1',
+  isFeatured
+    ? 'border-white/60 bg-white/78 shadow-glow dark:border-slate-800/80 dark:bg-slate-950/78'
+    : 'border-zinc-200/80 bg-white/76 shadow-panel dark:border-slate-800 dark:bg-slate-950/72'
+]}>
+  {hasHeroImage && imageSrc && (
+    <a href={href} class="block overflow-hidden border-b border-zinc-200/80 dark:border-slate-800">
+      <img
+        src={imageSrc}
+        alt={post.data.title}
+        class:list={[
+          'w-full object-cover transition duration-300 group-hover:scale-[1.02]',
+          isFeatured ? 'aspect-[16/9]' : 'aspect-[16/8]'
+        ]}
+        loading="lazy"
+      />
+    </a>
+  )}
+
+  <div class:list={[isFeatured ? 'p-7 md:p-8' : 'p-6']}>
+    <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+      <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+      {post.data.tags.slice(0, isFeatured ? 3 : 2).map((tag: string) => (
+        <span class="rounded-full border border-zinc-200/80 px-2.5 py-1 text-[10px] tracking-[0.18em] dark:border-slate-700">#{tag}</span>
+      ))}
+    </div>
+
+    <h2 class:list={[
+      'tracking-[-0.03em] text-zinc-950 dark:text-white',
+      isFeatured ? 'mt-5 font-serif text-3xl leading-tight md:text-4xl' : 'mt-4 text-2xl font-semibold'
+    ]}>
+      <a href={href} class="hover:text-accent">{post.data.title}</a>
+    </h2>
+
+    <p class:list={[
+      'text-zinc-600 dark:text-zinc-300',
+      isFeatured ? 'mt-4 max-w-reading text-base leading-8' : 'mt-3 text-sm leading-7'
+    ]}>{post.data.description}</p>
+
+    <div class="mt-6 flex items-center justify-between gap-4 border-t border-zinc-200/80 pt-4 dark:border-slate-800">
+      <span class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
+        {post.data.featured ? 'Featured note' : 'Read article'}
+      </span>
+      <a href={href} class="text-sm font-medium text-zinc-700 hover:text-accent dark:text-zinc-200">继续阅读 →</a>
+    </div>
   </div>
-  <h2 class="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">
-    <a href={withBase(`/posts/${post.slug}/`)} class="transition hover:text-accent">{post.data.title}</a>
-  </h2>
-  <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{post.data.description}</p>
 </article>

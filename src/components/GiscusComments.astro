@@ -3,11 +3,16 @@ import { isGiscusConfigured, siteConfig } from '../lib/site';
 
 const giscusConfigJson = JSON.stringify(siteConfig.giscus);
 ---
-<section class="mt-12 rounded-3xl border border-zinc-200/70 bg-white/80 p-6 dark:border-zinc-800 dark:bg-zinc-900/80">
+<section class="mt-12 rounded-[2rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-8">
+  <div class="mb-6 border-b border-zinc-200/80 pb-5 dark:border-slate-800">
+    <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Discussion</p>
+    <h2 class="mt-3 text-2xl font-semibold tracking-[-0.02em] text-zinc-950 dark:text-white">评论区</h2>
+  </div>
+
   {isGiscusConfigured ? (
     <div id="giscus-thread"></div>
   ) : (
-    <div class="space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+    <div class="space-y-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
       <p class="font-medium text-zinc-900 dark:text-white">评论功能待配置</p>
       <p>当前文章页已经预留评论区，填好 Giscus 的仓库与分类配置后，这里就会显示真实评论。</p>
     </div>

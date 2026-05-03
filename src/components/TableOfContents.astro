@@ -8,12 +8,13 @@ interface Props {
 const { items } = Astro.props;
 ---
 {items.length > 1 && (
-  <aside class="rounded-3xl border border-zinc-200/70 bg-white/70 p-5 dark:border-zinc-800 dark:bg-zinc-900/70">
-    <p class="text-sm font-semibold text-zinc-900 dark:text-white">文章目录</p>
-    <ul class="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+  <aside class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel dark:border-slate-800 dark:bg-slate-950/72">
+    <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Contents</p>
+    <p class="mt-3 text-base font-semibold text-zinc-950 dark:text-white">文章目录</p>
+    <ul class="mt-5 space-y-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
       {items.map((item) => (
         <li class={item.depth === 3 ? 'ml-4' : ''}>
-          <a href={`#${item.slug}`} class="transition hover:text-accent">{item.text}</a>
+          <a href={`#${item.slug}`} class="block border-l border-transparent pl-3 hover:border-accent hover:text-accent">{item.text}</a>
         </li>
       ))}
     </ul>
