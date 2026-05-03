@@ -75,13 +75,14 @@ function successPage(token: string, adminUrl: string, allowedOrigin: string) {
   </head>
   <body>
     <script>
-      const token = ${JSON.stringify(token)};
+      const auth = ${JSON.stringify({ token: '__TOKEN__' })};
+      auth.token = ${JSON.stringify(token)};
       const adminUrl = ${JSON.stringify(adminUrl)};
       const allowedOrigin = ${JSON.stringify(allowedOrigin)};
 
       const sendSuccess = () => {
         if (!window.opener) return;
-        window.opener.postMessage('authorization:github:success:' + token, allowedOrigin);
+        window.opener.postMessage('authorization:github:success:' + JSON.stringify(auth), allowedOrigin);
         window.close();
       };
 
