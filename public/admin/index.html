@@ -3,28 +3,318 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>博客后台</title>
+    <title>Lin Notes · 写作后台</title>
+    <link rel="icon" href="../favicon.svg" />
     <style>
       :root {
         color-scheme: dark;
+        --admin-bg: #050816;
+        --admin-surface: rgba(5, 8, 22, 0.78);
+        --admin-surface-strong: rgba(9, 14, 30, 0.92);
+        --admin-border: rgba(148, 163, 184, 0.18);
+        --admin-border-soft: rgba(148, 163, 184, 0.1);
+        --admin-text: #e4e4e7;
+        --admin-text-muted: #a1a1aa;
+        --admin-accent: #7f9fbb;
+        --admin-accent-strong: #b7cee2;
+        --admin-shadow: 0 32px 80px rgba(15, 23, 42, 0.28);
+        --admin-grid: rgba(100, 116, 139, 0.16);
+        --admin-grid-soft: rgba(100, 116, 139, 0.08);
       }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+      }
+
       body {
-        margin: 0;
-        font-family: Inter, system-ui, sans-serif;
-        background: #09090b;
-      }
-      .admin-loading {
         min-height: 100vh;
+        margin: 0;
+        position: relative;
+        background-color: var(--admin-bg);
+        color: var(--admin-text);
+        font-family: Inter, system-ui, sans-serif;
+        font-feature-settings: 'ss01' 1;
+        background-image:
+          radial-gradient(circle at top, rgba(127, 159, 187, 0.22), transparent 28%),
+          linear-gradient(180deg, rgba(5, 8, 22, 0.96), rgba(3, 7, 18, 1));
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.28;
+        background-image:
+          linear-gradient(var(--admin-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--admin-grid-soft) 1px, transparent 1px);
+        background-size: 100% 100%, 36px 36px;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 72%);
+      }
+
+      .admin-shell {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        padding: 40px 20px 72px;
+      }
+
+      .admin-loading {
+        max-width: 1180px;
+        margin: 0 auto;
         display: grid;
-        place-items: center;
-        color: #fafafa;
-        letter-spacing: 0.02em;
+        gap: 24px;
+        align-items: start;
+        min-height: calc(100vh - 112px);
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, 360px);
+      }
+
+      .admin-hero,
+      .admin-aside,
+      .admin-notice {
+        border: 1px solid var(--admin-border);
+        background: var(--admin-surface);
+        backdrop-filter: blur(20px);
+        box-shadow: var(--admin-shadow);
+      }
+
+      .admin-hero {
+        border-radius: 32px;
+        padding: 32px;
+        overflow: hidden;
+      }
+
+      .admin-kicker,
+      .admin-meta-label {
+        margin: 0;
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+        font-size: 11px;
+        line-height: 1.6;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+      }
+
+      .admin-kicker {
+        color: var(--admin-accent);
+      }
+
+      .admin-title {
+        margin: 18px 0 0;
+        max-width: 9ch;
+        font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, ui-serif, serif;
+        font-size: clamp(2.7rem, 7vw, 5rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+        color: #fff;
+      }
+
+      .admin-subtitle {
+        margin: 24px 0 0;
+        max-width: 44rem;
+        font-size: 1rem;
+        line-height: 1.9;
+        color: #cbd5e1;
+      }
+
+      .admin-status-grid {
+        display: grid;
+        gap: 14px;
+        margin-top: 28px;
+      }
+
+      .admin-status-card {
+        border-radius: 24px;
+        border: 1px solid var(--admin-border-soft);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 18px 18px 16px;
+      }
+
+      .admin-status-card strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #f8fafc;
+      }
+
+      .admin-status-card span {
+        display: block;
+        margin-top: 8px;
+        font-size: 0.93rem;
+        line-height: 1.75;
+        color: var(--admin-text-muted);
+      }
+
+      .admin-aside {
+        border-radius: 28px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        border-radius: 999px;
+        border: 1px solid var(--admin-border-soft);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 10px 14px;
+        color: var(--admin-text-muted);
+        font-size: 0.88rem;
+      }
+
+      .admin-badge::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--admin-accent);
+        box-shadow: 0 0 0 6px rgba(127, 159, 187, 0.12);
+      }
+
+      .admin-meta {
+        display: grid;
+        gap: 18px;
+      }
+
+      .admin-meta-block {
+        padding-top: 18px;
+        border-top: 1px solid var(--admin-border-soft);
+      }
+
+      .admin-meta-label {
+        color: var(--admin-text-muted);
+      }
+
+      .admin-meta-value {
+        margin: 10px 0 0;
+        font-size: 1rem;
+        line-height: 1.75;
+        color: #e2e8f0;
+      }
+
+      .admin-notice {
+        display: none;
+        max-width: 1180px;
+        margin: 24px auto 0;
+        border-radius: 24px;
+        padding: 20px 22px;
+      }
+
+      .admin-notice strong {
+        display: block;
+        font-size: 1rem;
+        color: #fff;
+      }
+
+      .admin-notice p {
+        margin: 10px 0 0;
+        font-size: 0.95rem;
+        line-height: 1.8;
+        color: var(--admin-text-muted);
+      }
+
+      .admin-notice code,
+      noscript code {
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--admin-accent-strong);
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.85em;
+      }
+
+      noscript {
+        display: block;
+        max-width: 1180px;
+        margin: 24px auto 0;
+        border-radius: 24px;
+        border: 1px solid rgba(248, 113, 113, 0.28);
+        background: rgba(127, 29, 29, 0.24);
+        padding: 18px 20px;
+        color: #fecaca;
+        position: relative;
+        z-index: 1;
+      }
+
+      a {
+        color: var(--admin-accent-strong);
+      }
+
+      @media (max-width: 960px) {
+        .admin-loading {
+          grid-template-columns: 1fr;
+        }
+
+        .admin-title {
+          max-width: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .admin-shell {
+          padding: 20px 14px 40px;
+        }
+
+        .admin-hero,
+        .admin-aside,
+        .admin-notice,
+        noscript {
+          border-radius: 24px;
+        }
+
+        .admin-hero,
+        .admin-aside {
+          padding: 22px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="admin-loading">正在加载博客后台…</div>
-    <noscript>博客后台需要启用 JavaScript。</noscript>
+    <div class="admin-shell">
+      <div class="admin-loading">
+        <section class="admin-hero" aria-live="polite">
+          <p class="admin-kicker">Engineering Field Journal</p>
+          <h1 class="admin-title">Lin Notes 后台工作台</h1>
+          <p class="admin-subtitle">在这里整理文章、推进编辑流与发布节奏。界面加载完成后会进入 Decap CMS，保留当前 GitHub OAuth 与发布链路不变。</p>
+          <div class="admin-status-grid">
+            <div class="admin-status-card">
+              <p class="admin-meta-label">Loading</p>
+              <strong>正在加载博客后台…</strong>
+              <span>首次进入或网络较慢时会有短暂等待，登录完成后将直接进入文章管理界面。</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="admin-aside">
+          <div class="admin-badge">Brand-aligned writing workspace</div>
+          <div class="admin-meta">
+            <div class="admin-meta-block">
+              <p class="admin-meta-label">Author role</p>
+              <p class="admin-meta-value">工程实践者 / 工具链整理者 / 长期写作者</p>
+            </div>
+            <div class="admin-meta-block">
+              <p class="admin-meta-label">Focus</p>
+              <p class="admin-meta-value">嵌入式、工程效率自动化、前端与内容系统实践。</p>
+            </div>
+            <div class="admin-meta-block">
+              <p class="admin-meta-label">Writing principle</p>
+              <p class="admin-meta-value">写结论，也写路径；保留足够的上下文，让文章能在未来继续复用。</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="admin-notice" id="oauth-notice" role="status" aria-live="polite"></div>
+      <noscript>博客后台需要启用 JavaScript，才能完成登录与内容编辑。</noscript>
+    </div>
     <script>
       window.CMS_MANUAL_INIT = true;
     </script>
@@ -33,10 +323,11 @@
       const productionHost = 'pwmpro-a.github.io';
       const isProduction = window.location.hostname === productionHost;
 
-      const notice = document.createElement('div');
-      notice.style.cssText = 'display:none;max-width:720px;margin:24px auto 0;padding:16px 18px;border-radius:18px;background:#18181b;color:#e4e4e7;font:14px/1.7 Inter,system-ui,sans-serif;border:1px solid rgba(255,255,255,.08)';
-      notice.innerHTML = '线上发布还需要补 GitHub OAuth 服务。当前后台界面已接好 Decap CMS，但 GitHub Pages 只能托管静态页面，无法直接完成 GitHub 登录回调。把 <code>public/admin/config.yml</code> 里的 <code>base_url</code> 和 <code>auth_endpoint</code> 改成你的 OAuth 服务后，就可以在线登录并发布。';
-      document.body.appendChild(notice);
+      const notice = document.getElementById('oauth-notice');
+      notice.innerHTML = `
+        <strong>OAuth 服务尚未准备完成</strong>
+        <p>线上发布还需要补 GitHub OAuth 服务。当前后台界面已接好 Decap CMS，但 GitHub Pages 只能托管静态页面，无法直接完成 GitHub 登录回调。把 <code>public/admin/config.yml</code> 里的 <code>base_url</code> 和 <code>auth_endpoint</code> 改成你的 OAuth 服务后，就可以在线登录并发布。</p>
+      `;
 
       if (window.CMS) {
         window.CMS.init();
