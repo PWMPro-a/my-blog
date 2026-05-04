@@ -723,9 +723,29 @@ async function destroyAdminSession(request: Request, env: Env) {
   await env.DB.prepare('DELETE FROM admin_sessions WHERE session_token_hash = ?1').bind(sessionTokenHash).run();
 }
 
-async function listAdminComments(env: Env, status: CommentStatus | '', slug: string, page: number, pageSize: number) {
-  const limit = Math.min(Math.max(pageSize, 1), 100);
-  const offset = Math.max(page - 1, 0) * limit;
+type AdminCommentFilters = {
+  status: CommentStatus | '';
+  slug: string;
+  q: string;
+  from: string;
+  to: string;
+  liked: boolean;
+  bloggerLiked: boolean;
+  page: number;
+  pageSize: number;
+};
+
+function normalizeDateFilter(value: string | null) {
+  const trimmed = value?.trim() ?? '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : '';
+}
+
+async function listAdminComments(env: Env, filters: AdminCommentFilters) {
+  const limit = Math.min(Math.max(filters.pageSize, 1), 100);
+  const offset = Math.max(filters.page - 1, 0) * limit;
+  const query = filters.q ? `%${filters.q}%` : '';
+  const from = filters.from ? `${filters.from} 00:00:00` : '';
+  const to = filters.to ? `${filters.to} 23:59:59` : '';
 
   const result = await env.DB.prepare(
     `SELECT comments.id,
@@ -749,10 +769,15 @@ async function listAdminComments(env: Env, status: CommentStatus | '', slug: str
      LEFT JOIN comments AS parent ON parent.id = comments.parent_id
      WHERE (?1 = '' OR comments.status = ?1)
        AND (?2 = '' OR posts.slug = ?2)
+       AND (?3 = '' OR comments.author_name LIKE ?3 OR comments.body LIKE ?3 OR posts.slug LIKE ?3 OR posts.title_snapshot LIKE ?3)
+       AND (?4 = '' OR comments.created_at >= ?4)
+       AND (?5 = '' OR comments.created_at <= ?5)
+       AND (?6 = 0 OR comments.like_count > 0)
+       AND (?7 = 0 OR comments.blogger_liked = 1)
      ORDER BY CASE comments.status WHEN 'pending' THEN 0 ELSE 1 END, comments.created_at DESC
-     LIMIT ?3 OFFSET ?4`
+     LIMIT ?8 OFFSET ?9`
   )
-    .bind(status, slug, limit, offset)
+    .bind(filters.status, filters.slug, query, from, to, filters.liked ? 1 : 0, filters.bloggerLiked ? 1 : 0, limit, offset)
     .all<CommentRow>();
 
   const countRow = await env.DB.prepare(
@@ -760,15 +785,20 @@ async function listAdminComments(env: Env, status: CommentStatus | '', slug: str
      FROM comments
      INNER JOIN posts ON posts.id = comments.post_id
      WHERE (?1 = '' OR comments.status = ?1)
-       AND (?2 = '' OR posts.slug = ?2)`
+       AND (?2 = '' OR posts.slug = ?2)
+       AND (?3 = '' OR comments.author_name LIKE ?3 OR comments.body LIKE ?3 OR posts.slug LIKE ?3 OR posts.title_snapshot LIKE ?3)
+       AND (?4 = '' OR comments.created_at >= ?4)
+       AND (?5 = '' OR comments.created_at <= ?5)
+       AND (?6 = 0 OR comments.like_count > 0)
+       AND (?7 = 0 OR comments.blogger_liked = 1)`
   )
-    .bind(status, slug)
+    .bind(filters.status, filters.slug, query, from, to, filters.liked ? 1 : 0, filters.bloggerLiked ? 1 : 0)
     .first<{ count: number }>();
 
   return {
     items: result.results ?? [],
     total: Number(countRow?.count ?? 0),
-    page,
+    page: filters.page,
     pageSize: limit
   };
 }
@@ -792,7 +822,94 @@ async function getAdminStats(env: Env) {
     counts[row.status] = Number(row.count ?? 0);
   }
 
-  return counts;
+  const [totalRow, pendingRecentRow, approvedRecentRow, topPostsResult] = await Promise.all([
+    env.DB.prepare('SELECT COUNT(*) as count FROM comments').first<{ count: number }>(),
+    env.DB.prepare("SELECT COUNT(*) as count FROM comments WHERE status = 'pending' AND created_at >= datetime('now', '-7 days')").first<{ count: number }>(),
+    env.DB.prepare("SELECT COUNT(*) as count FROM comments WHERE status = 'approved' AND approved_at >= datetime('now', '-7 days')").first<{ count: number }>(),
+    env.DB.prepare(
+      `SELECT posts.slug,
+              posts.title_snapshot as title,
+              COUNT(comments.id) as count
+       FROM comments
+       INNER JOIN posts ON posts.id = comments.post_id
+       GROUP BY posts.id, posts.slug, posts.title_snapshot
+       ORDER BY count DESC, posts.updated_at DESC
+       LIMIT 5`
+    ).all<{ slug: string; title: string | null; count: number }>()
+  ]);
+
+  return {
+    counts,
+    total: Number(totalRow?.count ?? 0),
+    pendingRecent: Number(pendingRecentRow?.count ?? 0),
+    approvedRecent: Number(approvedRecentRow?.count ?? 0),
+    topPosts: (topPostsResult.results ?? []).map((row) => ({
+      slug: row.slug,
+      title: row.title,
+      count: Number(row.count ?? 0)
+    }))
+  };
+}
+
+async function getAdminHealth(request: Request, env: Env) {
+  const missingEnv = validateEnv(env);
+  const checks = [
+    {
+      key: 'env',
+      label: 'Worker 环境变量',
+      status: missingEnv.length ? 'fail' : 'pass',
+      message: missingEnv.length ? `缺少：${missingEnv.join(', ')}` : '必需配置已就绪。'
+    },
+    {
+      key: 'turnstile',
+      label: 'Turnstile 验证',
+      status: isPlaceholder(env.TURNSTILE_SECRET_KEY) ? 'fail' : 'pass',
+      message: isPlaceholder(env.TURNSTILE_SECRET_KEY) ? '缺少 Turnstile Secret。' : 'Secret 已配置。'
+    },
+    {
+      key: 'githubOAuth',
+      label: 'GitHub OAuth',
+      status: isPlaceholder(env.GITHUB_CLIENT_ID) || isPlaceholder(env.GITHUB_CLIENT_SECRET) || isPlaceholder(env.GITHUB_OAUTH_REDIRECT_URI) ? 'fail' : 'pass',
+      message: '用于评论后台登录。'
+    },
+    {
+      key: 'siteOrigin',
+      label: '站点域名 / CORS',
+      status: isAllowedOrigin(env.ALLOWED_ORIGIN, env) ? 'pass' : 'fail',
+      message: env.ALLOWED_ORIGIN || '未配置允许来源。'
+    },
+    {
+      key: 'githubPages',
+      label: 'GitHub Pages 发布',
+      status: 'warn',
+      message: 'Worker 无 GitHub token；最新 Pages Actions 状态需在 GitHub 仓库查看。'
+    }
+  ];
+
+  try {
+    const row = await env.DB.prepare('SELECT COUNT(*) as count FROM comments').first<{ count: number }>();
+    checks.splice(1, 0, {
+      key: 'd1',
+      label: 'D1 评论数据库',
+      status: 'pass',
+      message: `可读取 comments 表，共 ${Number(row?.count ?? 0)} 条评论。`
+    });
+  } catch (error) {
+    checks.splice(1, 0, {
+      key: 'd1',
+      label: 'D1 评论数据库',
+      status: 'fail',
+      message: error instanceof Error ? error.message : 'D1 读取失败。'
+    });
+  }
+
+  return {
+    ok: checks.every((check) => check.status !== 'fail'),
+    service: 'comments-api-worker',
+    checkedAt: new Date().toISOString(),
+    origin: getRequestOrigin(request) ?? '',
+    checks
+  };
 }
 
 async function moderateComment(env: Env, commentId: string, action: string, admin: AdminSession) {
@@ -1014,8 +1131,17 @@ export default {
       if (!session) {
         return withCors(request, env, json({ ok: false, error: '未登录。' }, { status: 401 }));
       }
-      const counts = await getAdminStats(env);
-      return withCors(request, env, json({ ok: true, counts }));
+      const stats = await getAdminStats(env);
+      return withCors(request, env, json({ ok: true, ...stats }));
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/health') {
+      const session = await getAdminSession(request, env);
+      if (!session) {
+        return withCors(request, env, json({ ok: false, error: '未登录。' }, { status: 401 }));
+      }
+      const health = await getAdminHealth(request, env);
+      return withCors(request, env, json(health));
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/comments') {
@@ -1024,11 +1150,20 @@ export default {
         return withCors(request, env, json({ ok: false, error: '未登录。' }, { status: 401 }));
       }
 
-      const status = normalizeStatus(url.searchParams.get('status'));
-      const slug = url.searchParams.get('slug')?.trim() ?? '';
       const page = Number(url.searchParams.get('page') ?? '1');
       const pageSize = Number(url.searchParams.get('pageSize') ?? '20');
-      const result = await listAdminComments(env, status, slug, Number.isFinite(page) ? page : 1, Number.isFinite(pageSize) ? pageSize : 20);
+      const filters: AdminCommentFilters = {
+        status: normalizeStatus(url.searchParams.get('status')),
+        slug: url.searchParams.get('slug')?.trim() ?? '',
+        q: url.searchParams.get('q')?.trim() ?? '',
+        from: normalizeDateFilter(url.searchParams.get('from')),
+        to: normalizeDateFilter(url.searchParams.get('to')),
+        liked: url.searchParams.get('liked') === 'true',
+        bloggerLiked: url.searchParams.get('bloggerLiked') === 'true',
+        page: Number.isFinite(page) ? page : 1,
+        pageSize: Number.isFinite(pageSize) ? pageSize : 20
+      };
+      const result = await listAdminComments(env, filters);
       return withCors(request, env, json({ ok: true, ...result }));
     }
 

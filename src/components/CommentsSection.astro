@@ -300,6 +300,13 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
         }
       };
 
+      const getSubmitErrorMessage = (error) => {
+        const message = error instanceof Error ? error.message : '';
+        if (/fetch|network|load failed/i.test(message)) return '评论服务暂时无法连接，请稍后重试。';
+        if (message.includes('验证未通过') || /turnstile|token|challenge/i.test(message)) return '人机验证未通过，请刷新或重新完成验证后再提交。';
+        return message || '评论提交失败，请稍后重试。';
+      };
+
       const submitComment = async (form) => {
         const formData = new FormData(form);
         const token = getTurnstileToken();
@@ -338,12 +345,12 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
           form.reset();
           state.replyParentId = null;
           state.replyTargetName = '';
-          state.success = '评论已提交，等待审核通过后会出现在这里。';
+          state.success = '评论已提交，审核通过前只有博主能在后台看到。';
           resetTurnstile();
           await fetchComments();
-          state.success = '评论已提交，等待审核通过后会出现在这里。';
+          state.success = '评论已提交，审核通过前只有博主能在后台看到。';
         } catch (error) {
-          state.error = error instanceof Error ? error.message : '评论提交失败。';
+          state.error = getSubmitErrorMessage(error);
           resetTurnstile();
           render();
         } finally {

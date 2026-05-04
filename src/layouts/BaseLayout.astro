@@ -12,9 +12,11 @@ interface Props {
   type?: 'website' | 'article';
   publishedTime?: string;
   updatedTime?: string;
+  tags?: string[];
+  author?: string;
 }
 
-const { title, description, pathname, image, type, publishedTime, updatedTime } = Astro.props;
+const { title, description, pathname, image, type, publishedTime, updatedTime, tags, author } = Astro.props;
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -37,6 +39,8 @@ const { title, description, pathname, image, type, publishedTime, updatedTime } 
       type={type}
       publishedTime={publishedTime}
       updatedTime={updatedTime}
+      tags={tags}
+      author={author}
     />
   </head>
   <body class="min-h-screen overflow-x-hidden antialiased">

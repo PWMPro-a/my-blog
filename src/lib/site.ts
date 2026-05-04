@@ -3,6 +3,8 @@ export const siteConfig = {
   description: '一个偏工程与工具的个人技术博客，把问题定位、工具链细节和长期有效的方法论整理成持续输出。',
   author: 'LENOVO',
   siteUrl: 'https://ximo.qzz.io/',
+  defaultSocialImage: '/images/uploads/default-social-card.svg',
+  twitterSite: '',
   locale: 'zh-CN',
   brand: {
     label: 'Engineering Field Journal',
@@ -37,6 +39,7 @@ export const siteConfig = {
     { href: '/', label: '首页' },
     { href: '/posts', label: '文章' },
     { href: '/topics', label: '专题' },
+    { href: '/search', label: '搜索' },
     { href: '/tags', label: '标签' },
     { href: '/archive', label: '归档' },
     { href: '/about', label: '关于' }

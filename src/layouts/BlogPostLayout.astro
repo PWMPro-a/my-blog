@@ -26,6 +26,7 @@ const heroImage = post.data.heroImage ? withAsset(post.data.heroImage) : undefin
   type="article"
   publishedTime={post.data.pubDate.toISOString()}
   updatedTime={post.data.updatedDate?.toISOString()}
+  tags={post.data.tags}
 >
   <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
     <article>
@@ -41,7 +42,7 @@ const heroImage = post.data.heroImage ? withAsset(post.data.heroImage) : undefin
         </div>
         {heroImage && (
           <div class="mt-8 overflow-hidden rounded-[1.75rem] border border-zinc-200/80 dark:border-slate-800">
-            <img src={heroImage} alt={post.data.title} class="aspect-[16/8] w-full object-cover" />
+            <img src={heroImage} alt={post.data.title} decoding="async" class="aspect-[16/8] w-full object-cover" />
           </div>
         )}
       </header>

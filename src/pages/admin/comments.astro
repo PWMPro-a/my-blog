@@ -60,6 +60,8 @@ const adminConfigJson = JSON.stringify(adminConfig);
         loadingComments: false,
         error: '',
         actionError: '',
+        healthError: '',
+        health: null,
         items: [],
         counts: {
           pending: 0,
@@ -68,9 +70,20 @@ const adminConfigJson = JSON.stringify(adminConfig);
           spam: 0,
           hidden: 0
         },
+        stats: {
+          total: 0,
+          pendingRecent: 0,
+          approvedRecent: 0,
+          topPosts: []
+        },
         filters: {
           status: 'pending',
           slug: '',
+          q: '',
+          from: '',
+          to: '',
+          liked: false,
+          bloggerLiked: false,
           page: 1,
           pageSize: 20
         },
@@ -157,20 +170,85 @@ const adminConfigJson = JSON.stringify(adminConfig);
         `;
       };
 
-      const renderStats = () => `
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          ${statusOptions.slice(0, 5).map(([status, label]) => `
-            <button type="button" data-action="filter-status" data-status="${status}" class="rounded-[1.5rem] border ${state.filters.status === status ? 'border-accent bg-accent/10' : 'border-zinc-200/80 bg-white/72 dark:border-slate-800 dark:bg-slate-950/72'} p-4 text-left shadow-sm">
-              <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">${label}</p>
-              <p class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">${state.counts[status] ?? 0}</p>
-            </button>
-          `).join('')}
-        </div>
-      `;
+      const renderStats = () => {
+        const topPosts = Array.isArray(state.stats.topPosts) ? state.stats.topPosts : [];
+        return `
+          <div class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              ${statusOptions.slice(0, 5).map(([status, label]) => `
+                <button type="button" data-action="filter-status" data-status="${status}" class="rounded-[1.5rem] border ${state.filters.status === status ? 'border-accent bg-accent/10' : 'border-zinc-200/80 bg-white/72 dark:border-slate-800 dark:bg-slate-950/72'} p-4 text-left shadow-sm">
+                  <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">${label}</p>
+                  <p class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">${state.counts[status] ?? 0}</p>
+                </button>
+              `).join('')}
+            </div>
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,0.7fr)_minmax(280px,0.3fr)]">
+              <div class="grid gap-4 sm:grid-cols-3">
+                <div class="rounded-[1.5rem] border border-zinc-200/80 bg-white/72 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/72">
+                  <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">全部评论</p>
+                  <p class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">${state.stats.total}</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-zinc-200/80 bg-white/72 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/72">
+                  <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">7 日待审</p>
+                  <p class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">${state.stats.pendingRecent}</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-zinc-200/80 bg-white/72 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/72">
+                  <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">7 日通过</p>
+                  <p class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-zinc-950 dark:text-white">${state.stats.approvedRecent}</p>
+                </div>
+              </div>
+              <div class="rounded-[1.5rem] border border-zinc-200/80 bg-white/72 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/72">
+                <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">热门文章</p>
+                <div class="mt-3 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  ${topPosts.length ? topPosts.map((post) => `
+                    <button type="button" data-action="filter-slug" data-slug="${escapeHtml(post.slug)}" class="block w-full rounded-2xl border border-zinc-200/70 px-3 py-2 text-left hover:border-accent hover:text-accent dark:border-slate-800">
+                      <span class="block font-medium text-zinc-900 dark:text-white">${escapeHtml(post.title || post.slug)}</span>
+                      <span class="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">${escapeHtml(post.slug)} · ${Number(post.count || 0)} 条</span>
+                    </button>
+                  `).join('') : '<p class="leading-6 text-zinc-500 dark:text-zinc-400">还没有可统计的文章评论。</p>'}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      };
+
+      const renderHealth = () => {
+        const statusClass = {
+          pass: 'border-emerald-300/70 bg-emerald-50/80 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100',
+          warn: 'border-amber-300/70 bg-amber-50/80 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100',
+          fail: 'border-rose-300/70 bg-rose-50/80 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100'
+        };
+        const checks = state.health && Array.isArray(state.health.checks) ? state.health.checks : [];
+        return `
+          <section class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Health Check</p>
+                <h3 class="mt-2 text-xl font-semibold tracking-[-0.03em] text-zinc-950 dark:text-white">评论系统健康检查</h3>
+                <p class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">检查 Worker 配置、D1、Turnstile、OAuth 与站点来源；警告不会阻塞审核操作。</p>
+              </div>
+              <button type="button" data-action="refresh-health" class="rounded-full border border-zinc-300/80 px-4 py-2 text-sm font-medium text-zinc-600 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-zinc-300">重新检查</button>
+            </div>
+            ${state.healthError ? `<div class="mt-4 rounded-2xl border border-rose-300/70 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">${escapeHtml(state.healthError)}</div>` : ''}
+            <div class="mt-5 grid gap-3 md:grid-cols-2">
+              ${checks.length ? checks.map((check) => `
+                <div class="rounded-2xl border px-4 py-3 ${statusClass[check.status] || statusClass.warn}">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="font-medium">${escapeHtml(check.label)}</p>
+                    <span class="rounded-full bg-white/60 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] dark:bg-slate-950/30">${escapeHtml(check.status)}</span>
+                  </div>
+                  <p class="mt-2 text-sm leading-6 opacity-90">${escapeHtml(check.message)}</p>
+                </div>
+              `).join('') : '<div class="rounded-2xl border border-dashed border-zinc-200/80 px-4 py-6 text-sm text-zinc-500 dark:border-slate-800 dark:text-zinc-400">健康检查加载中…</div>'}
+            </div>
+          </section>
+        `;
+      };
 
       const renderFilters = () => `
         <form id="comments-admin-filters" class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-5 shadow-panel dark:border-slate-800 dark:bg-slate-950/72 md:p-6">
-          <div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto]">
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <label class="block text-sm text-zinc-600 dark:text-zinc-300">
               <span class="mb-2 block font-medium text-zinc-900 dark:text-white">状态筛选</span>
               <select name="status" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white">
@@ -181,8 +259,31 @@ const adminConfigJson = JSON.stringify(adminConfig);
               <span class="mb-2 block font-medium text-zinc-900 dark:text-white">文章 slug</span>
               <input name="slug" value="${escapeHtml(state.filters.slug)}" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="例如 embedded-toolchain-notes" />
             </label>
-            <div class="flex items-end gap-3">
+            <label class="block text-sm text-zinc-600 dark:text-zinc-300 md:col-span-2">
+              <span class="mb-2 block font-medium text-zinc-900 dark:text-white">关键词</span>
+              <input name="q" value="${escapeHtml(state.filters.q)}" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="搜索作者、正文、文章标题或 slug" />
+            </label>
+            <label class="block text-sm text-zinc-600 dark:text-zinc-300">
+              <span class="mb-2 block font-medium text-zinc-900 dark:text-white">开始日期</span>
+              <input name="from" type="date" value="${escapeHtml(state.filters.from)}" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+            </label>
+            <label class="block text-sm text-zinc-600 dark:text-zinc-300">
+              <span class="mb-2 block font-medium text-zinc-900 dark:text-white">结束日期</span>
+              <input name="to" type="date" value="${escapeHtml(state.filters.to)}" class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+            </label>
+            <div class="flex flex-wrap items-end gap-4 text-sm text-zinc-600 dark:text-zinc-300">
+              <label class="flex items-center gap-2 rounded-2xl border border-zinc-200/80 px-4 py-3 dark:border-slate-700">
+                <input name="liked" type="checkbox" ${state.filters.liked ? 'checked' : ''} class="h-4 w-4 accent-zinc-950" />
+                只看有点赞
+              </label>
+              <label class="flex items-center gap-2 rounded-2xl border border-zinc-200/80 px-4 py-3 dark:border-slate-700">
+                <input name="bloggerLiked" type="checkbox" ${state.filters.bloggerLiked ? 'checked' : ''} class="h-4 w-4 accent-zinc-950" />
+                博主赞过
+              </label>
+            </div>
+            <div class="flex flex-wrap items-end gap-3">
               <button type="submit" class="rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white hover:bg-accent dark:bg-white dark:text-zinc-950 dark:hover:bg-accent">刷新列表</button>
+              <button type="button" data-action="reset-filters" class="rounded-full border border-zinc-300/80 px-5 py-3 text-sm font-medium text-zinc-600 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-zinc-300">重置筛选</button>
               <button type="button" data-action="logout" class="rounded-full border border-zinc-300/80 px-5 py-3 text-sm font-medium text-zinc-600 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-zinc-300">退出</button>
             </div>
           </div>
@@ -195,7 +296,16 @@ const adminConfigJson = JSON.stringify(adminConfig);
         }
 
         if (!state.items.length) {
-          return '<div class="rounded-[1.75rem] border border-dashed border-zinc-200/80 px-5 py-10 text-center text-sm leading-7 text-zinc-500 dark:border-slate-800 dark:text-zinc-400">当前筛选条件下没有评论。</div>';
+          const activeFilters = [
+            state.filters.status ? `状态：${state.filters.status}` : '',
+            state.filters.slug ? `文章：${state.filters.slug}` : '',
+            state.filters.q ? `关键词：${state.filters.q}` : '',
+            state.filters.from ? `从 ${state.filters.from}` : '',
+            state.filters.to ? `到 ${state.filters.to}` : '',
+            state.filters.liked ? '有点赞' : '',
+            state.filters.bloggerLiked ? '博主赞过' : ''
+          ].filter(Boolean).join(' · ') || '未设置额外筛选';
+          return `<div class="rounded-[1.75rem] border border-dashed border-zinc-200/80 px-5 py-10 text-center text-sm leading-7 text-zinc-500 dark:border-slate-800 dark:text-zinc-400">当前筛选条件下没有评论。<br /><span class="text-xs">${escapeHtml(activeFilters)}</span></div>`;
         }
 
         return `
@@ -268,6 +378,7 @@ const adminConfigJson = JSON.stringify(adminConfig);
               </div>
             </section>
             ${renderStats()}
+            ${renderHealth()}
             ${renderFilters()}
             ${state.actionError ? `<div class="rounded-2xl border border-rose-300/70 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">${escapeHtml(state.actionError)}</div>` : ''}
             ${renderList()}
@@ -319,7 +430,23 @@ const adminConfigJson = JSON.stringify(adminConfig);
 
       const loadStats = async () => {
         const data = await apiFetch('/api/admin/stats', { method: 'GET' });
-        state.counts = data.counts;
+        state.counts = data.counts || state.counts;
+        state.stats = {
+          total: Number(data.total || 0),
+          pendingRecent: Number(data.pendingRecent || 0),
+          approvedRecent: Number(data.approvedRecent || 0),
+          topPosts: Array.isArray(data.topPosts) ? data.topPosts : []
+        };
+      };
+
+      const loadHealth = async () => {
+        try {
+          state.health = await apiFetch('/api/admin/health', { method: 'GET' });
+          state.healthError = '';
+        } catch (error) {
+          state.health = null;
+          state.healthError = error instanceof Error ? error.message : '健康检查获取失败。';
+        }
       };
 
       const loadComments = async () => {
@@ -331,6 +458,11 @@ const adminConfigJson = JSON.stringify(adminConfig);
           const params = new URLSearchParams({
             status: state.filters.status,
             slug: state.filters.slug,
+            q: state.filters.q,
+            from: state.filters.from,
+            to: state.filters.to,
+            liked: String(state.filters.liked),
+            bloggerLiked: String(state.filters.bloggerLiked),
             page: String(state.filters.page),
             pageSize: String(state.filters.pageSize)
           });
@@ -349,7 +481,7 @@ const adminConfigJson = JSON.stringify(adminConfig);
 
       const refreshDashboard = async () => {
         if (!state.session) return;
-        await Promise.all([loadStats(), loadComments()]);
+        await Promise.all([loadStats(), loadHealth(), loadComments()]);
         render();
       };
 
@@ -362,7 +494,7 @@ const adminConfigJson = JSON.stringify(adminConfig);
             method: 'PATCH',
             body: JSON.stringify({ action })
           });
-          await Promise.all([loadStats(), loadComments()]);
+          await Promise.all([loadStats(), loadHealth(), loadComments()]);
         } catch (error) {
           state.actionError = error instanceof Error ? error.message : '审核操作失败。';
         } finally {
@@ -389,6 +521,11 @@ const adminConfigJson = JSON.stringify(adminConfig);
         const formData = new FormData(event.target);
         state.filters.status = String(formData.get('status') || '');
         state.filters.slug = String(formData.get('slug') || '').trim();
+        state.filters.q = String(formData.get('q') || '').trim();
+        state.filters.from = String(formData.get('from') || '').trim();
+        state.filters.to = String(formData.get('to') || '').trim();
+        state.filters.liked = formData.get('liked') === 'on';
+        state.filters.bloggerLiked = formData.get('bloggerLiked') === 'on';
         state.filters.page = 1;
         loadComments();
       });
@@ -402,6 +539,34 @@ const adminConfigJson = JSON.stringify(adminConfig);
           state.filters.status = target.dataset.status || '';
           state.filters.page = 1;
           loadComments();
+          return;
+        }
+
+        if (action === 'filter-slug') {
+          state.filters.slug = target.dataset.slug || '';
+          state.filters.page = 1;
+          loadComments();
+          return;
+        }
+
+        if (action === 'reset-filters') {
+          state.filters = {
+            status: 'pending',
+            slug: '',
+            q: '',
+            from: '',
+            to: '',
+            liked: false,
+            bloggerLiked: false,
+            page: 1,
+            pageSize: state.filters.pageSize
+          };
+          loadComments();
+          return;
+        }
+
+        if (action === 'refresh-health') {
+          loadHealth().then(render);
           return;
         }
 
