@@ -93,42 +93,125 @@
 
         return h('article', { className: 'cms-preview-article' },
           h('style', {}, `
-            .cms-preview-article { padding: 32px; color: #18181b; font-family: Inter, system-ui, sans-serif; line-height: 1.75; }
-            .cms-preview-card { border: 1px solid #e4e4e7; border-radius: 24px; padding: 20px; margin: 18px 0; background: #fff; }
-            .cms-preview-title { margin: 0; font-family: Georgia, serif; font-size: 42px; line-height: 1.1; letter-spacing: -0.04em; }
-            .cms-preview-description { color: #52525b; font-size: 18px; }
-            .cms-preview-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-            .cms-preview-pill { border-radius: 999px; background: #eef2f7; padding: 4px 10px; color: #475569; font-size: 12px; }
+            .cms-preview-article {
+              min-height: 100vh;
+              padding: 42px;
+              color: #18181b;
+              font-family: Inter, system-ui, sans-serif;
+              line-height: 1.75;
+              background:
+                radial-gradient(circle at 12% 0%, rgba(127, 159, 187, 0.22), transparent 28%),
+                linear-gradient(180deg, #f8fafc, #eef2f7);
+            }
+            .cms-preview-frame {
+              max-width: 880px;
+              margin: 0 auto;
+            }
+            .cms-preview-card {
+              border: 1px solid rgba(148, 163, 184, 0.26);
+              border-radius: 28px;
+              padding: 26px;
+              margin: 18px 0;
+              background: rgba(255, 255, 255, 0.82);
+              box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+              backdrop-filter: blur(18px);
+            }
+            .cms-preview-title {
+              margin: 18px 0 0;
+              font-family: Georgia, serif;
+              font-size: clamp(34px, 7vw, 58px);
+              line-height: 1.02;
+              letter-spacing: -0.055em;
+              color: #09090b;
+            }
+            .cms-preview-description {
+              max-width: 680px;
+              color: #475569;
+              font-size: 18px;
+              line-height: 1.85;
+            }
+            .cms-preview-meta {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+              margin-top: 20px;
+            }
+            .cms-preview-pill {
+              display: inline-flex;
+              width: fit-content;
+              align-items: center;
+              border: 1px solid rgba(148, 163, 184, 0.28);
+              border-radius: 999px;
+              background: #eef2f7;
+              padding: 5px 11px;
+              color: #475569;
+              font: 600 12px/1.2 ui-monospace, SFMono-Regular, monospace;
+              letter-spacing: 0.04em;
+            }
+            .cms-preview-checklist {
+              display: grid;
+              gap: 10px;
+              padding: 0;
+              list-style: none;
+            }
+            .cms-preview-checklist li {
+              border-radius: 16px;
+              padding: 11px 13px;
+              background: rgba(248, 250, 252, 0.82);
+            }
             .cms-preview-warning { color: #b45309; }
             .cms-preview-ok { color: #047857; }
-            .cms-preview-image { max-width: 100%; border-radius: 20px; margin-top: 18px; }
-            .cms-preview-attachment { display: grid; gap: 4px; border: 1px solid #e4e4e7; border-radius: 16px; padding: 12px; margin-top: 10px; }
+            .cms-preview-image {
+              width: 100%;
+              max-height: 360px;
+              object-fit: cover;
+              border-radius: 24px;
+              margin-top: 22px;
+              border: 1px solid rgba(148, 163, 184, 0.22);
+            }
+            .cms-preview-attachment {
+              display: grid;
+              gap: 5px;
+              border: 1px solid rgba(148, 163, 184, 0.24);
+              border-radius: 18px;
+              padding: 14px;
+              margin-top: 10px;
+              background: rgba(248, 250, 252, 0.78);
+            }
+            .cms-preview-body :where(p, li) { color: #3f3f46; }
+            .cms-preview-body :where(pre, code) {
+              border-radius: 16px;
+              background: #0f172a;
+              color: #e2e8f0;
+            }
           `),
-          h('section', { className: 'cms-preview-card' },
-            h('p', { className: 'cms-preview-pill' }, draft ? '草稿状态：未发布' : '发布状态：公开'),
-            h('h1', { className: 'cms-preview-title' }, title),
-            h('p', { className: 'cms-preview-description' }, description || '还没有填写描述。'),
-            h('div', { className: 'cms-preview-meta' }, tags.map((tag) => h('span', { className: 'cms-preview-pill', key: tag }, tag))),
-            heroImage ? h('img', { className: 'cms-preview-image', src: heroImage, alt: title }) : null
-          ),
-          h('section', { className: 'cms-preview-card' },
-            h('h2', {}, '发布前检查'),
-            h('ul', {},
-              h('li', { className: titleLength >= 30 && titleLength <= 60 ? 'cms-preview-ok' : 'cms-preview-warning' }, `标题长度：${titleLength} 字，建议 30-60 字。`),
-              h('li', { className: descriptionLength >= 80 && descriptionLength <= 160 ? 'cms-preview-ok' : 'cms-preview-warning' }, `描述长度：${descriptionLength} 字，建议 80-160 字。`),
-              h('li', { className: heroImage ? 'cms-preview-ok' : 'cms-preview-warning' }, heroImage ? '已设置头图。' : '未设置头图，将使用默认分享图。'),
-              h('li', { className: draft ? 'cms-preview-warning' : 'cms-preview-ok' }, draft ? '当前仍是草稿，公开前记得关闭草稿。' : '当前会作为公开文章发布。')
-            )
-          ),
-          attachments.length ? h('section', { className: 'cms-preview-card' },
-            h('h2', {}, '附件'),
-            attachments.map((attachment, index) => h('div', { className: 'cms-preview-attachment', key: index },
-              h('strong', {}, attachment.title || '未命名附件'),
-              h('span', {}, `${attachment.type || 'other'} · ${attachment.file || '未选择文件'}`),
-              attachment.description ? h('span', {}, attachment.description) : null
-            ))
-          ) : null,
-          h('section', { className: 'cms-preview-card' }, widgetFor('body'))
+          h('div', { className: 'cms-preview-frame' },
+            h('section', { className: 'cms-preview-card' },
+              h('p', { className: 'cms-preview-pill' }, draft ? '草稿状态：未发布' : '发布状态：公开'),
+              h('h1', { className: 'cms-preview-title' }, title),
+              h('p', { className: 'cms-preview-description' }, description || '还没有填写描述。'),
+              h('div', { className: 'cms-preview-meta' }, tags.map((tag) => h('span', { className: 'cms-preview-pill', key: tag }, tag))),
+              heroImage ? h('img', { className: 'cms-preview-image', src: heroImage, alt: title }) : null
+            ),
+            h('section', { className: 'cms-preview-card' },
+              h('h2', {}, '发布前检查'),
+              h('ul', { className: 'cms-preview-checklist' },
+                h('li', { className: titleLength >= 30 && titleLength <= 60 ? 'cms-preview-ok' : 'cms-preview-warning' }, `标题长度：${titleLength} 字，建议 30-60 字。`),
+                h('li', { className: descriptionLength >= 80 && descriptionLength <= 160 ? 'cms-preview-ok' : 'cms-preview-warning' }, `描述长度：${descriptionLength} 字，建议 80-160 字。`),
+                h('li', { className: heroImage ? 'cms-preview-ok' : 'cms-preview-warning' }, heroImage ? '已设置头图。' : '未设置头图，将使用默认分享图。'),
+                h('li', { className: draft ? 'cms-preview-warning' : 'cms-preview-ok' }, draft ? '当前仍是草稿，公开前记得关闭草稿。' : '当前会作为公开文章发布。')
+              )
+            ),
+            attachments.length ? h('section', { className: 'cms-preview-card' },
+              h('h2', {}, '附件'),
+              attachments.map((attachment, index) => h('div', { className: 'cms-preview-attachment', key: index },
+                h('strong', {}, attachment.title || '未命名附件'),
+                h('span', {}, `${attachment.type || 'other'} · ${attachment.file || '未选择文件'}`),
+                attachment.description ? h('span', {}, attachment.description) : null
+              ))
+            ) : null,
+            h('section', { className: 'cms-preview-card cms-preview-body' }, widgetFor('body'))
+          )
         );
       });
     } catch (error) {

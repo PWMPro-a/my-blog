@@ -1,12 +1,13 @@
 ---
-title: 我如何整理本地开发环境
-description: 从终端、编辑器到脚本约定，一套稳定的本地环境能减少大量上下文切换成本。
+title: 我如何整理稳定的本地开发环境
+description: 从终端、编辑器到脚本约定，这篇文章记录如何搭建一套稳定的本地开发环境，减少换机器和接手项目时的上下文切换。
 pubDate: 2026-04-28
 tags:
   - tooling
   - windows
 featured: true
 draft: false
+heroImage: /images/uploads/default-social-card.svg
 ---
 
 每次换机器、重装系统或者接手新项目时，最先恢复的从来不是某个具体依赖，而是我的工作环境。因为真正影响效率的，往往不是某个包少装了，而是整个工作流断掉了。

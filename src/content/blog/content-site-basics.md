@@ -1,6 +1,6 @@
 ---
 title: 做一个内容站点时，我最看重哪些基础能力
-description: 内容系统不只是能发文章，更重要的是结构清晰、维护简单、长期稳定。
+description: 内容系统不只是能发布文章，还需要清晰的内容模型、克制的样式系统和低耦合的评论能力，才能长期稳定维护。
 pubDate: 2026-04-20
 tags:
   - astro
@@ -8,6 +8,7 @@ tags:
   - architecture
 featured: true
 draft: false
+heroImage: /images/uploads/default-social-card.svg
 ---
 
 一个内容站点如果只是“能渲染页面”，其实远远不够。真正决定后续维护成本的，是那些一开始很容易被忽略的基础能力。

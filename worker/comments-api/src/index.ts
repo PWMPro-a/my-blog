@@ -59,8 +59,11 @@ const STATE_COOKIE = 'comments-admin-state';
 const SESSION_COOKIE = 'comments-admin-session';
 const MAX_DEPTH = 2;
 const MAX_BODY_LENGTH = 4000;
+const MAX_SLUG_LENGTH = 120;
 const RATE_LIMIT_WINDOW_MINUTES = 15;
 const RATE_LIMIT_MAX_SUBMISSIONS = 6;
+const LIKE_RATE_LIMIT_WINDOW_MINUTES = 10;
+const LIKE_RATE_LIMIT_MAX_ADDITIONS = 20;
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -262,11 +265,38 @@ function normalizeWebsite(value: unknown) {
   const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
     const url = new URL(candidate);
-    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    if (url.protocol !== 'https:') return null;
     return url.toString();
   } catch {
     return null;
   }
+}
+
+function normalizeSlug(value: unknown) {
+  if (typeof value !== 'string') return '';
+
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    return '';
+  }
+
+  const normalized = decoded.trim().replace(/^\/+|\/+$/g, '');
+  if (!normalized || normalized.length > MAX_SLUG_LENGTH) return '';
+  if (!/^[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*$/i.test(normalized)) return '';
+  return normalized;
+}
+
+function detectSpamSignals(authorName: string, body: string, authorWebsite: string | null) {
+  const normalizedBody = body.toLowerCase();
+  const links = body.match(/https?:\/\/\S+/gi) ?? [];
+  const repeatedCharacters = /(.)\1{12,}/.test(body);
+  const suspiciousTerms = /(?:casino|viagra|loan|crypto\s*airdrop|免费博彩|现金网|代开发票|刷单|办证)/i.test(body);
+  const mostlyLinks = links.length >= 2 && links.join(' ').length > body.length * 0.6;
+  const shortNameWithLink = authorName.length <= 2 && Boolean(authorWebsite || links.length);
+
+  return links.length > 4 || mostlyLinks || repeatedCharacters || suspiciousTerms || shortNameWithLink || normalizedBody.includes('[url=');
 }
 
 function normalizeStatus(value: string | null): CommentStatus | '' {
@@ -346,6 +376,19 @@ async function ensureRateLimit(env: Env, ipHash: string) {
     .first<{ count: number }>();
 
   return Number(result?.count ?? 0) < RATE_LIMIT_MAX_SUBMISSIONS;
+}
+
+async function ensureLikeRateLimit(env: Env, visitorHash: string) {
+  const windowStart = new Date(Date.now() - LIKE_RATE_LIMIT_WINDOW_MINUTES * 60_000).toISOString();
+  const result = await env.DB.prepare(
+    `SELECT COUNT(*) as count
+     FROM comment_likes
+     WHERE visitor_hash = ?1 AND created_at >= ?2`
+  )
+    .bind(visitorHash, windowStart)
+    .first<{ count: number }>();
+
+  return Number(result?.count ?? 0) < LIKE_RATE_LIMIT_MAX_ADDITIONS;
 }
 
 async function getOrCreatePost(env: Env, slug: string, titleSnapshot?: string, urlSnapshot?: string) {
@@ -480,6 +523,11 @@ async function toggleCommentLike(env: Env, request: Request, commentId: string, 
   }
 
   if (payload.liked) {
+    const likeAllowed = await ensureLikeRateLimit(env, visitorHash);
+    if (!likeAllowed) {
+      return json({ ok: false, error: '点赞过于频繁，请稍后再试。' }, { status: 429 });
+    }
+
     const ipHash = await sha256(getClientIp(request));
     const userAgentHash = await sha256(request.headers.get('user-agent') ?? 'unknown');
     await env.DB.prepare(
@@ -536,6 +584,11 @@ async function createComment(
     parentId?: unknown;
   }
 ) {
+  const normalizedSlug = normalizeSlug(slug);
+  if (!normalizedSlug) {
+    return json({ ok: false, error: '文章地址无效。' }, { status: 400 });
+  }
+
   const authorName = normalizeAuthorName(payload.authorName);
   const body = normalizeBody(payload.body);
   const authorWebsite = normalizeWebsite(payload.authorWebsite);
@@ -567,9 +620,9 @@ async function createComment(
   const userAgentHash = await sha256(request.headers.get('user-agent') ?? 'unknown');
   const postId = await getOrCreatePost(
     env,
-    slug,
+    normalizedSlug,
     typeof payload.postTitle === 'string' ? payload.postTitle : undefined,
-    typeof payload.postUrl === 'string' ? payload.postUrl : buildPublicSiteUrl(env, slug)
+    typeof payload.postUrl === 'string' ? payload.postUrl : buildPublicSiteUrl(env, normalizedSlug)
   );
 
   let parentId: string | null = null;
@@ -580,6 +633,10 @@ async function createComment(
     const parent = await getCommentById(env, payload.parentId);
     if (!parent || parent.status !== 'approved') {
       return json({ ok: false, error: '要回复的评论不存在，或当前不可回复。' }, { status: 404 });
+    }
+
+    if (parent.postId !== postId) {
+      return json({ ok: false, error: '回复的评论不属于当前文章。' }, { status: 400 });
     }
 
     if (parent.depth >= MAX_DEPTH) {
@@ -593,14 +650,15 @@ async function createComment(
 
   const id = crypto.randomUUID();
   const bodyHtml = renderBodyHtml(body);
+  const status: CommentStatus = detectSpamSignals(authorName, body, authorWebsite) ? 'spam' : 'pending';
   await env.DB.prepare(
     `INSERT INTO comments (
       id, post_id, parent_id, root_id, depth, author_name, author_website,
       body, body_html, status, source, ip_hash, user_agent_hash
      )
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', 'public', ?10, ?11)`
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'public', ?11, ?12)`
   )
-    .bind(id, postId, parentId, rootId, depth, authorName, authorWebsite, body, bodyHtml, ipHash, userAgentHash)
+    .bind(id, postId, parentId, rootId, depth, authorName, authorWebsite, body, bodyHtml, status, ipHash, userAgentHash)
     .run();
 
   return json({
@@ -613,7 +671,7 @@ async function createComment(
       authorWebsite,
       bodyHtml,
       createdAt: new Date().toISOString(),
-      status: 'pending'
+      status
     }
   });
 }
@@ -985,7 +1043,11 @@ export default {
 
     const publicCommentsMatch = url.pathname.match(/^\/api\/posts\/([^/]+)\/comments$/);
     if (request.method === 'GET' && publicCommentsMatch) {
-      const slug = decodeURIComponent(publicCommentsMatch[1]);
+      const slug = normalizeSlug(publicCommentsMatch[1]);
+      if (!slug) {
+        return withCors(request, env, json({ ok: false, error: '文章地址无效。' }, { status: 400 }));
+      }
+
       const comments = await listApprovedComments(env, slug, await getVisitorHash(request));
       return withCors(request, env, json({ ok: true, comments, maxDepth: MAX_DEPTH }));
     }

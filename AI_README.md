@@ -148,6 +148,26 @@ CMS extensions:
 
 Do not edit `public/admin/decap-cms.js` for custom behavior. Put project customizations in `public/admin/cms-extensions.js`.
 
+## Public config vs Worker secrets
+
+Some configuration is intentionally public because it is shipped to the browser or visible in Decap config:
+
+- Production site URL: `https://ximo.qzz.io`
+- Public comments API base URL in `src/lib/site.ts`
+- Turnstile site key in frontend config
+- Admin paths such as `/admin/` and `/admin/comments/`
+- Decap OAuth public endpoint/base URL in `public/admin/config.yml`
+
+These must stay only in Cloudflare Worker secrets, bindings, or protected environment config:
+
+- GitHub OAuth client secret
+- Turnstile secret key
+- Admin session or signing secrets
+- D1 database binding/config that should not be exposed beyond Worker config
+- Any Wrangler secret output or local `.env` values
+
+Never paste secrets into frontend files, Markdown content, Decap config, commit messages, screenshots, or generated docs. Public IDs and site keys are not enough to impersonate the service; private secrets are.
+
 ## Media policy
 
 Allowed:
@@ -220,9 +240,12 @@ Run from the repo root:
 npm run check:media
 npm run check:content
 npm run check
+npm run check:workers
 npm run build
 npm run deploy:check
 ```
+
+`npm run deploy:check` includes media/content validation, Astro type checking, Worker dry-run checks, and the production build.
 
 `npm run check:content` may print SEO/content warnings for existing posts. Warnings do not block the build; errors do.
 

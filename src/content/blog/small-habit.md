@@ -1,11 +1,12 @@
 ---
-title: 一条能省很多时间的小习惯
-description: 把重复动作及时写成脚本，往往比继续忍受更划算。
+title: 一条能长期节省开发时间的小习惯
+description: 这篇短文记录一个实用规则：当同一个动作重复出现三次，就尽早把它整理成脚本、模板或固定流程。
 pubDate: 2026-04-12
 tags:
   - productivity
   - notes
 draft: false
+heroImage: /images/uploads/default-social-card.svg
 featured: false
 ---
 

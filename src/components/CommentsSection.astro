@@ -82,17 +82,36 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
         }
       };
 
+      const hasTurnstileWidget = () => state.turnstileWidgetId !== null;
+
       const getTurnstileToken = () => {
         if (!config.isTurnstileConfigured) return '';
-        if (!window.turnstile || !state.turnstileWidgetId) return '';
+        if (!window.turnstile || !hasTurnstileWidget()) return '';
         return window.turnstile.getResponse(state.turnstileWidgetId) || '';
       };
 
       const resetTurnstile = () => {
         if (!config.isTurnstileConfigured) return;
-        if (window.turnstile && state.turnstileWidgetId) {
+        if (window.turnstile && hasTurnstileWidget()) {
           window.turnstile.reset(state.turnstileWidgetId);
         }
+      };
+
+      const removeTurnstile = () => {
+        if (!config.isTurnstileConfigured) return;
+        if (window.turnstile && hasTurnstileWidget()) {
+          window.turnstile.remove(state.turnstileWidgetId);
+        }
+        state.turnstileWidgetId = null;
+      };
+
+      const renderTurnstile = () => {
+        const turnstileTarget = document.getElementById('comments-turnstile');
+        if (!config.isTurnstileConfigured || !turnstileTarget || !window.turnstile || hasTurnstileWidget()) return;
+        state.turnstileWidgetId = window.turnstile.render(turnstileTarget, {
+          sitekey: config.turnstileSiteKey,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+        });
       };
 
       const getVisitorToken = () => {
@@ -207,13 +226,16 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
       };
 
       const renderLoading = () => {
+        removeTurnstile();
         root.innerHTML = `
           ${renderForm()}
           <div class="rounded-[1.75rem] border border-dashed border-zinc-200/80 px-5 py-10 text-center text-sm text-zinc-500 dark:border-slate-800 dark:text-zinc-400">评论加载中…</div>
         `;
+        renderTurnstile();
       };
 
       const render = () => {
+        removeTurnstile();
         if (state.loading) {
           renderLoading();
           return;
@@ -234,20 +256,7 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
           </div>
         `;
 
-        const turnstileTarget = document.getElementById('comments-turnstile');
-        if (config.isTurnstileConfigured && turnstileTarget && window.turnstile) {
-          if (state.turnstileWidgetId) {
-            state.turnstileWidgetId = window.turnstile.render(turnstileTarget, {
-              sitekey: config.turnstileSiteKey,
-              theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-            });
-          } else {
-            state.turnstileWidgetId = window.turnstile.render(turnstileTarget, {
-              sitekey: config.turnstileSiteKey,
-              theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-            });
-          }
-        }
+        renderTurnstile();
       };
 
       const fetchComments = async () => {
@@ -411,8 +420,8 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
       };
 
       document.addEventListener('theme-changed', () => {
-        if (!config.isTurnstileConfigured || !window.turnstile || !state.turnstileWidgetId) return;
-        state.turnstileWidgetId = null;
+        if (!config.isTurnstileConfigured || !window.turnstile) return;
+        removeTurnstile();
         render();
       });
 

@@ -1,5 +1,5 @@
 import { access, readFile, readdir } from 'node:fs/promises';
-import { extname, isAbsolute, join, resolve } from 'node:path';
+import { basename, extname, isAbsolute, join, resolve } from 'node:path';
 import matter from 'gray-matter';
 
 const rootDir = process.cwd();
@@ -231,9 +231,31 @@ function validateVideoReferences(file, body) {
   }
 }
 
-async function validateBlogPost(file) {
+async function readMarkdownEntry(file) {
   const source = await readFile(file, 'utf8');
-  const { data, content } = matter(source);
+  const parsed = matter(source);
+  return {
+    file,
+    slug: basename(file, '.md'),
+    data: parsed.data,
+    content: parsed.content
+  };
+}
+
+async function collectBlogEntries(files) {
+  const entries = new Map();
+
+  for (const file of files) {
+    const entry = await readMarkdownEntry(file);
+    if (entries.has(entry.slug)) addError(file, `文章 slug 重复：${entry.slug}`);
+    entries.set(entry.slug, entry);
+  }
+
+  return entries;
+}
+
+async function validateBlogPost(entry) {
+  const { file, data, content } = entry;
   const isDraft = data.draft === true;
 
   for (const field of ['title', 'description', 'pubDate', 'draft']) {
@@ -264,7 +286,35 @@ async function validateBlogPost(file) {
   validateVideoReferences(file, content);
 }
 
-async function validateTopic(file) {
+function validateTopicPostReferences(file, posts, blogEntries) {
+  if (posts === undefined) return;
+  if (!Array.isArray(posts)) {
+    addError(file, 'posts 必须是数组。');
+    return;
+  }
+
+  const seen = new Set();
+  for (const [index, postSlug] of posts.entries()) {
+    if (typeof postSlug !== 'string' || !postSlug.trim()) {
+      addError(file, `posts[${index}] 必须是非空文章 slug。`);
+      continue;
+    }
+
+    const normalized = postSlug.trim();
+    if (seen.has(normalized)) addError(file, `posts 包含重复文章引用：${normalized}`);
+    seen.add(normalized);
+
+    const referencedPost = blogEntries.get(normalized);
+    if (!referencedPost) {
+      addError(file, `posts 引用了不存在的文章：${normalized}`);
+      continue;
+    }
+
+    if (referencedPost.data.draft === true) addWarning(file, `posts 引用了草稿文章：${normalized}`);
+  }
+}
+
+async function validateTopic(file, blogEntries) {
   const source = await readFile(file, 'utf8');
   const { data, content } = matter(source);
 
@@ -273,7 +323,7 @@ async function validateTopic(file) {
   }
 
   if (data.draft !== undefined && typeof data.draft !== 'boolean') addError(file, 'draft 必须是 boolean。');
-  if (data.posts !== undefined && !Array.isArray(data.posts)) addError(file, 'posts 必须是数组。');
+  validateTopicPostReferences(file, data.posts, blogEntries);
   if (data.coverImage) await assertLocalPublicFile(file, data.coverImage, 'coverImage', allowedImageExtensions);
   await validateMarkdownImages(file, content);
   validateMarkdownLinks(file, content);
@@ -289,12 +339,15 @@ async function validateUploadDirectory(dir, allowedExtensions, label) {
   }
 }
 
-for (const file of await collectMarkdownFiles(blogDir)) {
-  await validateBlogPost(file);
+const blogFiles = await collectMarkdownFiles(blogDir);
+const blogEntries = await collectBlogEntries(blogFiles);
+
+for (const entry of blogEntries.values()) {
+  await validateBlogPost(entry);
 }
 
 for (const file of await collectMarkdownFiles(topicDir)) {
-  await validateTopic(file);
+  await validateTopic(file, blogEntries);
 }
 
 await validateUploadDirectory(join(publicDir, 'images', 'uploads'), allowedImageExtensions, '图片上传目录');

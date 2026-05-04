@@ -32,9 +32,12 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm --prefix ./worker/comments-api ci
+          npm --prefix ./worker/decap-oauth ci
 
-      - name: Build site
+      - name: Validate and build site
         run: npm run deploy:check
 
       - name: Upload Pages artifact

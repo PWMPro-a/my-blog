@@ -165,6 +165,7 @@
         transition: opacity 180ms ease, max-height 180ms ease, margin 180ms ease;
       }
 
+      .admin-shell.is-docked .admin-action-grid,
       .admin-shell.is-docked .admin-status-grid {
         opacity: 0;
         max-height: 0;
@@ -346,7 +347,187 @@
         color: var(--admin-accent-strong);
       }
 
+      .admin-action-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .admin-action-card {
+        min-height: 112px;
+        border-radius: 22px;
+        border: 1px solid var(--admin-border-soft);
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+          rgba(255, 255, 255, 0.03);
+        padding: 16px;
+        color: #e2e8f0;
+        text-decoration: none;
+        transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+      }
+
+      .admin-action-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(183, 206, 226, 0.32);
+        background:
+          linear-gradient(145deg, rgba(127, 159, 187, 0.16), rgba(255, 255, 255, 0.035)),
+          rgba(255, 255, 255, 0.04);
+      }
+
+      .admin-action-card strong {
+        display: block;
+        font-size: 0.98rem;
+        line-height: 1.45;
+        color: #f8fafc;
+      }
+
+      .admin-action-card span {
+        display: block;
+        margin-top: 8px;
+        font-size: 0.82rem;
+        line-height: 1.65;
+        color: var(--admin-text-muted);
+      }
+
+      #nc-root {
+        position: relative;
+        z-index: 2;
+        color: #e5e7eb;
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      #nc-root [class*='AppMainContainer'],
+      #nc-root [class*='StyledAppMainContainer'] {
+        background:
+          radial-gradient(circle at 18% 0%, rgba(127, 159, 187, 0.18), transparent 28%),
+          linear-gradient(180deg, rgba(5, 8, 22, 0.94), rgba(3, 7, 18, 0.98)) !important;
+      }
+
+      #nc-root aside,
+      #nc-root nav,
+      #nc-root [class*='Sidebar'],
+      #nc-root [class*='Nav'] {
+        background: rgba(9, 14, 30, 0.82) !important;
+        border-color: rgba(148, 163, 184, 0.16) !important;
+        backdrop-filter: blur(22px);
+      }
+
+      #nc-root main,
+      #nc-root [class*='CollectionMain'],
+      #nc-root [class*='EditorContainer'] {
+        background: transparent !important;
+      }
+
+      #nc-root header,
+      #nc-root [class*='Toolbar'],
+      #nc-root [class*='TopBar'] {
+        background: rgba(5, 8, 22, 0.7) !important;
+        border-color: rgba(148, 163, 184, 0.14) !important;
+        backdrop-filter: blur(20px);
+      }
+
+      #nc-root h1,
+      #nc-root h2,
+      #nc-root h3,
+      #nc-root label,
+      #nc-root [class*='Label'] {
+        color: #f8fafc !important;
+      }
+
+      #nc-root p,
+      #nc-root span,
+      #nc-root small,
+      #nc-root li,
+      #nc-root [class*='Hint'] {
+        color: #cbd5e1;
+      }
+
+      #nc-root a {
+        color: var(--admin-accent-strong) !important;
+      }
+
+      #nc-root button,
+      #nc-root [role='button'] {
+        border-radius: 999px !important;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+      }
+
+      #nc-root button:hover,
+      #nc-root [role='button']:hover {
+        transform: translateY(-1px);
+      }
+
+      #nc-root input,
+      #nc-root textarea,
+      #nc-root select,
+      #nc-root [contenteditable='true'] {
+        border-color: rgba(148, 163, 184, 0.18) !important;
+        background: rgba(15, 23, 42, 0.72) !important;
+        color: #f8fafc !important;
+        border-radius: 16px !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+
+      #nc-root input:focus,
+      #nc-root textarea:focus,
+      #nc-root select:focus,
+      #nc-root [contenteditable='true']:focus {
+        border-color: rgba(183, 206, 226, 0.48) !important;
+        box-shadow: 0 0 0 4px rgba(127, 159, 187, 0.14) !important;
+        outline: none !important;
+      }
+
+      #nc-root input::placeholder,
+      #nc-root textarea::placeholder {
+        color: rgba(203, 213, 225, 0.48) !important;
+      }
+
+      #nc-root [class*='Card'],
+      #nc-root [class*='ListCard'],
+      #nc-root [class*='EntryCard'],
+      #nc-root [class*='ControlContainer'],
+      #nc-root [class*='EditorControl'],
+      #nc-root [class*='PreviewPane'] {
+        border-color: rgba(148, 163, 184, 0.15) !important;
+        background: rgba(9, 14, 30, 0.68) !important;
+        border-radius: 22px !important;
+        box-shadow: 0 24px 64px rgba(2, 6, 23, 0.18) !important;
+      }
+
+      #nc-root [class*='CollectionTopContainer'],
+      #nc-root [class*='EditorTopContainer'] {
+        border-radius: 0 0 24px 24px;
+        border-color: rgba(148, 163, 184, 0.14) !important;
+        background: rgba(5, 8, 22, 0.72) !important;
+      }
+
+      #nc-root [class*='EditorControlBar'],
+      #nc-root [class*='ToolbarContainer'] {
+        border-color: rgba(148, 163, 184, 0.14) !important;
+        background: rgba(15, 23, 42, 0.72) !important;
+      }
+
+      #nc-root iframe {
+        border-radius: 22px;
+        background: #f8fafc;
+      }
+
+      #nc-root [class*='Status'],
+      #nc-root [class*='Badge'],
+      #nc-root [class*='Pill'] {
+        border-radius: 999px !important;
+      }
+
+      #nc-root [class*='MarkdownControl'] textarea,
+      #nc-root [class*='CodeMirror'],
+      #nc-root .cm-editor {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace !important;
+        line-height: 1.75 !important;
+      }
+
       @media (max-width: 960px) {
+        .admin-action-grid,
         .admin-loading {
           grid-template-columns: 1fr;
         }
@@ -390,6 +571,20 @@
           <p class="admin-kicker">Engineering Field Journal</p>
           <h1 class="admin-title">Lin Notes 后台工作台</h1>
           <p class="admin-subtitle">在这里整理文章、推进编辑流与发布节奏。界面加载完成后会进入 Decap CMS，保留当前 GitHub OAuth 与发布链路不变。</p>
+          <div class="admin-action-grid" aria-label="后台快捷入口">
+            <a class="admin-action-card" href="#/collections/blog/new">
+              <strong>写新文章</strong>
+              <span>从标题、描述、标签和正文开始，进入完整发文流程。</span>
+            </a>
+            <a class="admin-action-card" href="#/collections/topics">
+              <strong>整理专题</strong>
+              <span>维护专题页，把相关文章按长期主题聚合起来。</span>
+            </a>
+            <a class="admin-action-card" href="comments/">
+              <strong>审核评论</strong>
+              <span>处理游客留言、回复、垃圾评论和博主点赞。</span>
+            </a>
+          </div>
           <div class="admin-status-grid">
             <div class="admin-status-card">
               <p class="admin-meta-label">Loading</p>

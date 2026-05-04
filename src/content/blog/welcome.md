@@ -1,12 +1,13 @@
 ---
-title: 欢迎来到这个博客
-description: 这是第一篇文章，用来说明这个博客会写什么、怎么写、为什么继续写下去。
+title: 欢迎来到 Lin Notes 这个技术博客
+description: 这篇文章说明 Lin Notes 会记录哪些开发经验、工具方法和工作流判断，以及为什么把过程沉淀成可复用的笔记。
 pubDate: 2026-05-01
 tags:
   - notes
   - writing
 featured: true
 draft: false
+heroImage: /images/uploads/default-social-card.svg
 ---
 
 写博客这件事，真正有价值的从来不是“发出去”本身，而是把过程里的判断、取舍和经验留下来。很多看起来简单的问题，真正难的并不是写出最后一行代码，而是你为什么确认问题在这里、为什么最后选了这个方案。

@@ -11,7 +11,10 @@
     "check": "astro check",
     "check:media": "node scripts/check-media-uploads.mjs",
     "check:content": "node scripts/validate-content.mjs",
-    "deploy:check": "npm run check:media && npm run check:content && npm run check && npm run build",
+    "check:worker:comments": "npm --prefix ./worker/comments-api run check",
+    "check:worker:decap-oauth": "npm --prefix ./worker/decap-oauth run check",
+    "check:workers": "npm run check:worker:comments && npm run check:worker:decap-oauth",
+    "deploy:check": "npm run check:media && npm run check:content && npm run check && npm run check:workers && npm run build",
     "docx:markdown": "node scripts/docx-to-markdown.mjs",
     "worker:dev": "npm --prefix ./worker/decap-oauth run dev"
   },
