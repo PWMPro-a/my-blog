@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS comments (
   source TEXT NOT NULL DEFAULT 'public' CHECK (source IN ('public', 'admin')),
   ip_hash TEXT,
   user_agent_hash TEXT,
+  like_count INTEGER NOT NULL DEFAULT 0,
+  blogger_liked INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   approved_at TEXT,
@@ -51,6 +53,17 @@ CREATE TABLE IF NOT EXISTS comment_events (
   FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS comment_likes (
+  id TEXT PRIMARY KEY,
+  comment_id TEXT NOT NULL,
+  visitor_hash TEXT NOT NULL,
+  ip_hash TEXT,
+  user_agent_hash TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+  UNIQUE(comment_id, visitor_hash)
+);
+
 CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
 CREATE INDEX IF NOT EXISTS idx_comments_post_status_created ON comments(post_id, status, created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments(parent_id);
@@ -59,3 +72,5 @@ CREATE INDEX IF NOT EXISTS idx_comments_ip_hash_created ON comments(ip_hash, cre
 CREATE INDEX IF NOT EXISTS idx_comments_status_created ON comments(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires_at ON admin_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_comment_events_comment_id_created ON comment_events(comment_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_comment_likes_comment_id ON comment_likes(comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_likes_visitor_hash ON comment_likes(visitor_hash);

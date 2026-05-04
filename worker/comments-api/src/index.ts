@@ -22,6 +22,9 @@ type CommentRow = {
   body: string;
   bodyHtml: string;
   status: CommentStatus;
+  likeCount: number;
+  likedByViewer?: number | boolean | null;
+  bloggerLiked: number | boolean;
   createdAt: string;
   postSlug?: string;
   postTitle?: string | null;
@@ -37,6 +40,9 @@ type CommentNode = {
   authorName: string;
   authorWebsite: string | null;
   bodyHtml: string;
+  likeCount: number;
+  likedByViewer: boolean;
+  bloggerLiked: boolean;
   createdAt: string;
   replies: CommentNode[];
 };
@@ -126,7 +132,7 @@ function withCors(request: Request, env: Env, response: Response) {
   const headers = new Headers(response.headers);
   headers.set('access-control-allow-origin', origin!);
   headers.set('access-control-allow-credentials', 'true');
-  headers.set('access-control-allow-headers', 'content-type');
+  headers.set('access-control-allow-headers', 'content-type,x-comment-visitor');
   headers.set('access-control-allow-methods', 'GET,POST,PATCH,OPTIONS');
   headers.set('vary', 'Origin');
   return new Response(response.body, { ...response, headers });
@@ -210,6 +216,16 @@ async function parseJson<T>(request: Request) {
 
 function getClientIp(request: Request) {
   return request.headers.get('cf-connecting-ip') ?? request.headers.get('x-forwarded-for') ?? 'unknown';
+}
+
+function getVisitorToken(request: Request) {
+  const token = request.headers.get('x-comment-visitor')?.trim() ?? '';
+  return /^[a-zA-Z0-9_-]{16,128}$/.test(token) ? token : '';
+}
+
+async function getVisitorHash(request: Request) {
+  const token = getVisitorToken(request);
+  return token ? sha256(token) : '';
 }
 
 async function verifyTurnstile(token: string | undefined, request: Request, env: Env) {
@@ -321,6 +337,9 @@ function buildCommentTree(rows: CommentRow[]) {
       authorName: row.authorName,
       authorWebsite: row.authorWebsite,
       bodyHtml: row.bodyHtml,
+      likeCount: Number(row.likeCount ?? 0),
+      likedByViewer: Boolean(row.likedByViewer),
+      bloggerLiked: Boolean(row.bloggerLiked),
       createdAt: row.createdAt,
       replies: []
     });
@@ -341,7 +360,7 @@ function buildCommentTree(rows: CommentRow[]) {
   return roots;
 }
 
-async function listApprovedComments(env: Env, slug: string) {
+async function listApprovedComments(env: Env, slug: string, visitorHash: string) {
   const result = await env.DB.prepare(
     `SELECT comments.id,
             comments.parent_id as parentId,
@@ -352,16 +371,78 @@ async function listApprovedComments(env: Env, slug: string) {
             comments.body,
             comments.body_html as bodyHtml,
             comments.status,
+            comments.like_count as likeCount,
+            CASE WHEN comment_likes.id IS NULL THEN 0 ELSE 1 END as likedByViewer,
+            comments.blogger_liked as bloggerLiked,
             comments.created_at as createdAt
      FROM comments
      INNER JOIN posts ON posts.id = comments.post_id
+     LEFT JOIN comment_likes ON comment_likes.comment_id = comments.id AND comment_likes.visitor_hash = ?2
      WHERE posts.slug = ?1 AND comments.status = 'approved'
      ORDER BY comments.created_at ASC`
   )
-    .bind(slug)
+    .bind(slug, visitorHash)
     .all<CommentRow>();
 
   return buildCommentTree(result.results ?? []);
+}
+
+async function toggleCommentLike(env: Env, request: Request, commentId: string, payload: { liked?: unknown }) {
+  const visitorHash = await getVisitorHash(request);
+  if (!visitorHash) {
+    return json({ ok: false, error: '点赞标识无效，请刷新后重试。' }, { status: 400 });
+  }
+
+  if (typeof payload.liked !== 'boolean') {
+    return json({ ok: false, error: '点赞数据格式不正确。' }, { status: 400 });
+  }
+
+  const existing = await getCommentById(env, commentId);
+  if (!existing || existing.status !== 'approved') {
+    return json({ ok: false, error: '评论不存在，或当前不可点赞。' }, { status: 404 });
+  }
+
+  if (payload.liked) {
+    const ipHash = await sha256(getClientIp(request));
+    const userAgentHash = await sha256(request.headers.get('user-agent') ?? 'unknown');
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO comment_likes (id, comment_id, visitor_hash, ip_hash, user_agent_hash)
+       VALUES (?1, ?2, ?3, ?4, ?5)`
+    )
+      .bind(crypto.randomUUID(), commentId, visitorHash, ipHash, userAgentHash)
+      .run();
+  } else {
+    await env.DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?1 AND visitor_hash = ?2').bind(commentId, visitorHash).run();
+  }
+
+  const countRow = await env.DB.prepare('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = ?1')
+    .bind(commentId)
+    .first<{ count: number }>();
+  const likeCount = Number(countRow?.count ?? 0);
+
+  await env.DB.prepare(
+    `UPDATE comments
+     SET like_count = ?2,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?1`
+  )
+    .bind(commentId, likeCount)
+    .run();
+
+  const likedRow = await env.DB.prepare('SELECT id FROM comment_likes WHERE comment_id = ?1 AND visitor_hash = ?2')
+    .bind(commentId, visitorHash)
+    .first<{ id: string }>();
+  const comment = await env.DB.prepare('SELECT blogger_liked as bloggerLiked FROM comments WHERE id = ?1')
+    .bind(commentId)
+    .first<{ bloggerLiked: number | boolean }>();
+
+  return json({
+    ok: true,
+    commentId,
+    likeCount,
+    likedByViewer: Boolean(likedRow),
+    bloggerLiked: Boolean(comment?.bloggerLiked)
+  });
 }
 
 async function createComment(
@@ -579,6 +660,8 @@ async function listAdminComments(env: Env, status: CommentStatus | '', slug: str
             comments.body,
             comments.body_html as bodyHtml,
             comments.status,
+            comments.like_count as likeCount,
+            comments.blogger_liked as bloggerLiked,
             comments.created_at as createdAt,
             posts.slug as postSlug,
             posts.title_snapshot as postTitle,
@@ -636,6 +719,32 @@ async function getAdminStats(env: Env) {
 }
 
 async function moderateComment(env: Env, commentId: string, action: string, admin: AdminSession) {
+  const existing = await getCommentById(env, commentId);
+  if (!existing) {
+    return json({ ok: false, error: '评论不存在。' }, { status: 404 });
+  }
+
+  if (action === 'toggle_blogger_like') {
+    const result = await env.DB.prepare(
+      `UPDATE comments
+       SET blogger_liked = CASE WHEN blogger_liked = 1 THEN 0 ELSE 1 END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?1
+       RETURNING blogger_liked as bloggerLiked`
+    )
+      .bind(commentId)
+      .first<{ bloggerLiked: number | boolean }>();
+
+    await env.DB.prepare(
+      `INSERT INTO comment_events (id, comment_id, admin_login, action)
+       VALUES (?1, ?2, ?3, ?4)`
+    )
+      .bind(crypto.randomUUID(), commentId, admin.githubLogin, action)
+      .run();
+
+    return json({ ok: true, commentId, bloggerLiked: Boolean(result?.bloggerLiked) });
+  }
+
   const nextStatus = ({
     approve: 'approved',
     reject: 'rejected',
@@ -645,11 +754,6 @@ async function moderateComment(env: Env, commentId: string, action: string, admi
 
   if (!nextStatus) {
     return json({ ok: false, error: '不支持的审核动作。' }, { status: 400 });
-  }
-
-  const existing = await getCommentById(env, commentId);
-  if (!existing) {
-    return json({ ok: false, error: '评论不存在。' }, { status: 404 });
   }
 
   await env.DB.prepare(
@@ -688,7 +792,7 @@ export default {
     const publicCommentsMatch = url.pathname.match(/^\/api\/posts\/([^/]+)\/comments$/);
     if (request.method === 'GET' && publicCommentsMatch) {
       const slug = decodeURIComponent(publicCommentsMatch[1]);
-      const comments = await listApprovedComments(env, slug);
+      const comments = await listApprovedComments(env, slug, await getVisitorHash(request));
       return withCors(request, env, json({ ok: true, comments, maxDepth: MAX_DEPTH }));
     }
 
@@ -707,6 +811,17 @@ export default {
       }
 
       const response = await createComment(env, request, decodeURIComponent(publicCommentsMatch[1]), payload);
+      return withCors(request, env, response);
+    }
+
+    const likeMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/like$/);
+    if (request.method === 'POST' && likeMatch) {
+      const payload = await parseJson<{ liked?: unknown }>(request);
+      if (!payload) {
+        return withCors(request, env, json({ ok: false, error: '点赞数据格式不正确。' }, { status: 400 }));
+      }
+
+      const response = await toggleCommentLike(env, request, likeMatch[1], payload);
       return withCors(request, env, response);
     }
 
