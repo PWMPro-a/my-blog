@@ -301,13 +301,13 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
       };
 
       const submitComment = async (form) => {
+        const formData = new FormData(form);
+        const token = getTurnstileToken();
+
         state.submitting = true;
         state.error = '';
         state.success = '';
         render();
-
-        const formData = new FormData(form);
-        const token = getTurnstileToken();
         const endpoint = state.replyParentId
           ? `${config.apiBaseUrl.replace(/\/$/, '')}/api/comments/${encodeURIComponent(state.replyParentId)}/replies`
           : `${config.apiBaseUrl.replace(/\/$/, '')}/api/posts/${encodeURIComponent(config.slug)}/comments`;
