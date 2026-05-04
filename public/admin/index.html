@@ -66,7 +66,7 @@
 
       .admin-shell.is-docked {
         min-height: auto;
-        padding: clamp(18vh, 22vh, 28vh) 20px 24px;
+        padding: clamp(20vh, 24vh, 30vh) 20px 28px;
       }
 
       .admin-shell.is-hidden {
@@ -89,7 +89,9 @@
       }
 
       .admin-shell.is-docked .admin-loading {
+        max-width: min(1320px, calc(100vw - 40px));
         min-height: auto;
+        grid-template-columns: 1fr;
         gap: 18px;
       }
 
@@ -110,7 +112,8 @@
       }
 
       .admin-shell.is-docked .admin-hero {
-        padding: 24px 26px;
+        min-height: 32vh;
+        padding: clamp(34px, 4vw, 56px) clamp(34px, 5vw, 72px);
       }
 
       .admin-kicker,
@@ -139,9 +142,9 @@
       }
 
       .admin-shell.is-docked .admin-title {
-        max-width: none;
-        margin-top: 14px;
-        font-size: clamp(2.2rem, 4vw, 3.4rem);
+        max-width: min(14ch, 100%);
+        margin-top: 18px;
+        font-size: clamp(3.2rem, 6vw, 6.6rem);
       }
 
       .admin-subtitle {
@@ -154,8 +157,9 @@
       }
 
       .admin-shell.is-docked .admin-subtitle {
-        margin-top: 18px;
-        font-size: 0.96rem;
+        max-width: 62rem;
+        margin-top: 22px;
+        font-size: clamp(1rem, 1.5vw, 1.18rem);
       }
 
       .admin-status-grid {
