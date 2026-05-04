@@ -41,3 +41,30 @@ collections:
       - { label: 精选, name: featured, widget: boolean, default: false }
       - { label: 头图, name: heroImage, widget: image, required: false }
       - { label: 正文, name: body, widget: markdown }
+  - name: topics
+    label: 专题
+    label_singular: 专题
+    folder: src/content/topics
+    create: true
+    delete: true
+    extension: md
+    format: frontmatter
+    slug: '{{slug}}'
+    preview_path: topics/{{slug}}
+    summary: '{{title}} · {{posts | length}} 篇文章'
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 描述, name: description, widget: text }
+      - { label: 封面图, name: coverImage, widget: image, required: false }
+      - { label: 排序, name: order, widget: number, default: 999, value_type: int }
+      - { label: 草稿, name: draft, widget: boolean, default: false }
+      - label: 相关文章
+        name: posts
+        widget: relation
+        collection: blog
+        search_fields: [title, description]
+        value_field: '{{slug}}'
+        display_fields: [title]
+        multiple: true
+        required: false
+      - { label: 正文, name: body, widget: markdown, required: false }

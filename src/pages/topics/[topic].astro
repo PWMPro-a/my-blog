@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPostsByTopic, getPublishedTopics, type BlogEntry, type TopicEntry } from '../../lib/blog';
+import { withAsset } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const topics = await getPublishedTopics();
+  return topics.map((topic: TopicEntry) => ({
+    params: { topic: topic.slug },
+    props: { topic }
+  }));
+}
+
+const { topic } = Astro.props as { topic: TopicEntry };
+const posts = await getPostsByTopic(topic);
+const { Content } = await topic.render();
+const coverImage = topic.data.coverImage ? withAsset(topic.data.coverImage) : undefined;
+---
+<BaseLayout title={`专题：${topic.data.title}`} description={topic.data.description} pathname={`/topics/${topic.slug}/`} image={topic.data.coverImage}>
+  <section>
+    <div class="overflow-hidden rounded-[2rem] border border-white/60 bg-white/72 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72">
+      {coverImage && <img src={coverImage} alt={topic.data.title} class="aspect-[16/6] w-full object-cover" />}
+      <div class="p-6 md:p-10">
+        <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Special Collection</p>
+        <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">{topic.data.title}</h1>
+        <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">{topic.data.description}</p>
+        <p class="mt-6 font-mono text-[11px] uppercase tracking-[0.24em] text-zinc-500 dark:text-zinc-400">{posts.length} 篇文章</p>
+      </div>
+    </div>
+
+    <div class="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="space-y-6">
+        {posts.map((post: BlogEntry) => <PostCard post={post} />)}
+      </div>
+
+      <aside class="space-y-6">
+        <section class="rounded-[1.75rem] border border-zinc-200/80 bg-white/72 p-6 shadow-panel dark:border-slate-800 dark:bg-slate-950/72">
+          <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Reading Path</p>
+          <p class="mt-4 text-sm leading-7 text-zinc-600 dark:text-zinc-300">这个专题按后台配置的顺序组织文章，适合沿着同一问题域连续阅读。</p>
+        </section>
+        <section class="rounded-[1.75rem] border border-zinc-200/80 bg-zinc-50/75 p-6 dark:border-slate-800 dark:bg-slate-900/60">
+          <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Notes</p>
+          <div class="prose prose-zinc mt-4 max-w-none text-sm dark:prose-invert">
+            <Content />
+          </div>
+        </section>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>

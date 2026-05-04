@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getTopicsWithCounts, type TopicEntry } from '../../lib/blog';
+import { withAsset, withBase } from '../../lib/site';
+
+const topics = await getTopicsWithCounts();
+---
+<BaseLayout title="专题" description="按专题浏览文章合集。" pathname="/topics/">
+  <section>
+    <div class="rounded-[2rem] border border-white/60 bg-white/72 p-6 shadow-glow backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72 md:p-10">
+      <p class="font-mono text-[11px] uppercase tracking-[0.34em] text-accent">Special Collections</p>
+      <h1 class="mt-4 font-serif text-4xl tracking-[-0.04em] text-zinc-950 dark:text-white md:text-6xl">专题</h1>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-zinc-600 dark:text-zinc-300">把分散文章整理成更完整的阅读路径，从一个问题域进入相关背景、实现过程与后续维护记录。</p>
+    </div>
+
+    <div class="mt-10 grid gap-6 lg:grid-cols-2">
+      {topics.map(({ topic, count }: { topic: TopicEntry; count: number }) => {
+        const coverImage = topic.data.coverImage ? withAsset(topic.data.coverImage) : undefined;
+
+        return (
+          <article class="group overflow-hidden rounded-[1.75rem] border border-zinc-200/80 bg-white/76 shadow-panel backdrop-blur transition hover:-translate-y-1 hover:border-accent dark:border-slate-800 dark:bg-slate-950/72">
+            {coverImage && (
+              <a href={withBase(`/topics/${topic.slug}/`)} class="block overflow-hidden border-b border-zinc-200/80 dark:border-slate-800">
+                <img src={coverImage} alt={topic.data.title} class="aspect-[16/7] w-full object-cover transition duration-300 group-hover:scale-[1.02]" loading="lazy" />
+              </a>
+            )}
+            <div class="p-6 md:p-7">
+              <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                <span>Topic</span>
+                <span class="rounded-full border border-zinc-200/80 px-2.5 py-1 text-[10px] tracking-[0.18em] dark:border-slate-700">{count} 篇文章</span>
+              </div>
+              <h2 class="mt-4 font-serif text-3xl tracking-[-0.03em] text-zinc-950 dark:text-white">
+                <a href={withBase(`/topics/${topic.slug}/`)} class="hover:text-accent">{topic.data.title}</a>
+              </h2>
+              <p class="mt-4 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{topic.data.description}</p>
+              <a href={withBase(`/topics/${topic.slug}/`)} class="mt-6 inline-flex text-sm font-medium text-zinc-700 hover:text-accent dark:text-zinc-200">进入专题 →</a>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 export type BlogEntry = CollectionEntry<'blog'>;
+export type TopicEntry = CollectionEntry<'topics'>;
 
 export async function getPublishedPosts() {
   const posts = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
@@ -35,6 +36,38 @@ export async function getTagsWithCounts() {
 export async function getPostsByTag(tag: string) {
   const posts = await getPublishedPosts();
   return posts.filter((post: BlogEntry) => post.data.tags.includes(tag));
+}
+
+export async function getPublishedTopics() {
+  const topics = await getCollection('topics', ({ data }: TopicEntry) => !data.draft);
+  return topics.sort((a: TopicEntry, b: TopicEntry) => {
+    const orderDiff = a.data.order - b.data.order;
+    return orderDiff || a.data.title.localeCompare(b.data.title, 'zh-CN');
+  });
+}
+
+export async function getTopicsWithCounts() {
+  const [topics, posts] = await Promise.all([getPublishedTopics(), getPublishedPosts()]);
+  const publishedSlugs = new Set(posts.map((post: BlogEntry) => post.slug));
+
+  return topics.map((topic: TopicEntry) => ({
+    topic,
+    count: topic.data.posts.filter((slug: string) => publishedSlugs.has(slug)).length
+  }));
+}
+
+export async function getPostsByTopic(topic: TopicEntry) {
+  const posts = await getPublishedPosts();
+  const postsBySlug = new Map(posts.map((post: BlogEntry) => [post.slug, post]));
+
+  return topic.data.posts
+    .map((slug: string) => postsBySlug.get(slug))
+    .filter((post: BlogEntry | undefined): post is BlogEntry => Boolean(post));
+}
+
+export async function getTopicBySlug(slug: string) {
+  const topics = await getPublishedTopics();
+  return topics.find((topic: TopicEntry) => topic.slug === slug);
 }
 
 export async function getArchiveGroups() {

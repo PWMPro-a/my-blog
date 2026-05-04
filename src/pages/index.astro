@@ -2,13 +2,14 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
 import TagList from '../components/TagList.astro';
-import { getFeaturedPosts, getRecentPosts, getTagsWithCounts, type BlogEntry } from '../lib/blog';
+import { getFeaturedPosts, getRecentPosts, getTagsWithCounts, getTopicsWithCounts, type BlogEntry, type TopicEntry } from '../lib/blog';
 import { siteConfig, withBase } from '../lib/site';
 
-const [featuredPosts, recentPosts, tags] = await Promise.all([
+const [featuredPosts, recentPosts, tags, topics] = await Promise.all([
   getFeaturedPosts(),
   getRecentPosts(4),
-  getTagsWithCounts()
+  getTagsWithCounts(),
+  getTopicsWithCounts()
 ]);
 
 const leadFeaturedPost = featuredPosts[0];
@@ -73,6 +74,32 @@ const secondaryFeaturedPosts = featuredPosts.slice(1);
     )}
   </section>
 
+  <section class="mt-16">
+    <div class="mb-8 flex items-end justify-between gap-4">
+      <div>
+        <p class="font-mono text-[11px] uppercase tracking-[0.3em] text-accent">Special Collections</p>
+        <h2 class="mt-3 font-serif text-3xl tracking-[-0.03em] text-zinc-950 dark:text-white md:text-4xl">专题</h2>
+      </div>
+      <a href={withBase('/topics')} class="text-sm text-zinc-500 hover:text-accent dark:text-zinc-400">查看全部</a>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      {topics.slice(0, 2).map(({ topic, count }: { topic: TopicEntry; count: number }) => (
+        <article class="rounded-[1.75rem] border border-zinc-200/80 bg-white/76 p-6 shadow-panel backdrop-blur transition hover:-translate-y-1 hover:border-accent dark:border-slate-800 dark:bg-slate-950/72 md:p-7">
+          <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+            <span>Topic</span>
+            <span class="rounded-full border border-zinc-200/80 px-2.5 py-1 text-[10px] tracking-[0.18em] dark:border-slate-700">{count} 篇文章</span>
+          </div>
+          <h3 class="mt-4 font-serif text-3xl tracking-[-0.03em] text-zinc-950 dark:text-white">
+            <a href={withBase(`/topics/${topic.slug}/`)} class="hover:text-accent">{topic.data.title}</a>
+          </h3>
+          <p class="mt-4 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{topic.data.description}</p>
+          <a href={withBase(`/topics/${topic.slug}/`)} class="mt-6 inline-flex text-sm font-medium text-zinc-700 hover:text-accent dark:text-zinc-200">进入专题 →</a>
+        </article>
+      ))}
+    </div>
+  </section>
+
   <section class="mt-16 grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
     <div>
       <div class="mb-8">
@@ -86,9 +113,9 @@ const secondaryFeaturedPosts = featuredPosts.slice(1);
 
     <aside class="space-y-6">
       <section class="rounded-[1.75rem] border border-white/60 bg-white/72 p-6 shadow-panel backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/72">
-        <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Explore by Topic</p>
-        <h2 class="mt-3 text-xl font-semibold text-zinc-950 dark:text-white">主题入口</h2>
-        <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">从工程、工具、自动化与前端实践切入，按主题快速进入内容脉络。</p>
+        <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Browse Tags</p>
+        <h2 class="mt-3 text-xl font-semibold text-zinc-950 dark:text-white">标签入口</h2>
+        <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">用更细粒度的标签快速切换到工程方向、工具类别或实践场景。</p>
         <div class="mt-6">
           <TagList tags={tags.slice(0, 10)} />
         </div>
