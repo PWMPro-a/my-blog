@@ -19,7 +19,7 @@ import { siteConfig } from '../lib/site';
           <li>值得长期复用的小技巧与工作方法</li>
         </ul>
         <h2>这个站点怎么维护</h2>
-        <p>博客基于 Astro 构建，文章用 Markdown 管理，评论由 Giscus 承载，发布侧则接入了 Decap CMS 与 GitHub Pages。整体目标不是堆功能，而是维持一个轻量、清晰、可长期演化的写作系统。</p>
+        <p>博客基于 Astro 构建，文章用 Markdown 管理，发布侧接入 Decap CMS 与 GitHub Pages；评论系统已经切换为自建服务，由 Cloudflare Worker、D1 与 Turnstile 承担提交、审核和防滥用流程。整体目标不是堆功能，而是把写作、发布、评论与后台管理拆成清晰的边界，让站点保持轻量、可控，也能长期维护。</p>
       </div>
     </div>
 
