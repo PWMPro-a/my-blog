@@ -1,5 +1,12 @@
 import { defineCollection, z } from 'astro:content';
 
+const attachmentSchema = z.object({
+  title: z.string(),
+  file: z.string(),
+  type: z.enum(['pdf', 'docx', 'doc', 'other']).default('other'),
+  description: z.string().optional()
+});
+
 const blog = defineCollection({
   type: 'content',
   schema: z.object({
@@ -10,7 +17,8 @@ const blog = defineCollection({
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     featured: z.boolean().default(false),
-    heroImage: z.string().optional()
+    heroImage: z.string().optional(),
+    attachments: z.array(attachmentSchema).default([])
   })
 });
 

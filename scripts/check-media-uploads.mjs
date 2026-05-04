@@ -1,10 +1,22 @@
 import { readdir } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 
-const uploadDir = join(process.cwd(), 'public', 'images', 'uploads');
-const blockedExtensions = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v', '.wmv', '.flv']);
+const roots = [
+  {
+    dir: join(process.cwd(), 'public', 'images', 'uploads'),
+    label: 'public/images/uploads',
+    allowed: new Set(['.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp']),
+    message: '图片上传目录只允许常见图片文件；视频请放到外部平台，附件请放到 public/attachments/uploads。'
+  },
+  {
+    dir: join(process.cwd(), 'public', 'attachments', 'uploads'),
+    label: 'public/attachments/uploads',
+    allowed: new Set(['.doc', '.docx', '.pdf']),
+    message: '附件上传目录只允许 PDF、DOC、DOCX；图片请放到 public/images/uploads，视频和压缩包不要上传到仓库。'
+  }
+];
 
-async function collectBlockedFiles(dir) {
+async function collectInvalidFiles(root, dir = root.dir) {
   let entries = [];
 
   try {
@@ -16,20 +28,27 @@ async function collectBlockedFiles(dir) {
 
   const files = await Promise.all(entries.map(async (entry) => {
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) return collectBlockedFiles(path);
-    if (entry.isFile() && blockedExtensions.has(extname(entry.name).toLowerCase())) return [path];
-    return [];
+    if (entry.isDirectory()) return collectInvalidFiles(root, path);
+    if (!entry.isFile()) return [];
+
+    const extension = extname(entry.name).toLowerCase();
+    return root.allowed.has(extension) ? [] : [path];
   }));
 
   return files.flat();
 }
 
-const blockedFiles = await collectBlockedFiles(uploadDir);
+let hasErrors = false;
 
-if (blockedFiles.length) {
-  console.error('Video files should not be uploaded to public/images/uploads. Host videos externally and paste the link in content instead.');
-  for (const file of blockedFiles) {
-    console.error(`- ${relative(process.cwd(), file).replaceAll('\\\\', '/')}`);
+for (const root of roots) {
+  const invalidFiles = await collectInvalidFiles(root);
+  if (!invalidFiles.length) continue;
+
+  hasErrors = true;
+  console.error(root.message);
+  for (const file of invalidFiles) {
+    console.error(`- ${relative(process.cwd(), file).replaceAll('\\', '/')}`);
   }
-  process.exit(1);
 }
+
+if (hasErrors) process.exit(1);

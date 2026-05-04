@@ -10,7 +10,9 @@
     "preview": "astro preview",
     "check": "astro check",
     "check:media": "node scripts/check-media-uploads.mjs",
-    "deploy:check": "npm run check:media && npm run check && npm run build",
+    "check:content": "node scripts/validate-content.mjs",
+    "deploy:check": "npm run check:media && npm run check:content && npm run check && npm run build",
+    "docx:markdown": "node scripts/docx-to-markdown.mjs",
     "worker:dev": "npm --prefix ./worker/decap-oauth run dev"
   },
   "dependencies": {
@@ -20,6 +22,8 @@
     "@astrojs/tailwind": "^6.0.2",
     "@tailwindcss/typography": "^0.5.19",
     "astro": "^5.18.1",
+    "gray-matter": "^4.0.3",
+    "mammoth": "^1.11.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",

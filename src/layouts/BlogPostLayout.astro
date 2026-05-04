@@ -15,8 +15,16 @@ interface Props {
   next?: BlogEntry;
 }
 
+type PostAttachment = BlogEntry['data']['attachments'][number];
+type RenderedAttachment = Omit<PostAttachment, 'type'> & { href: string; type: string };
+
 const { post, tocItems, previous, next } = Astro.props;
 const heroImage = post.data.heroImage ? withAsset(post.data.heroImage) : undefined;
+const attachments: RenderedAttachment[] = post.data.attachments.map((attachment: PostAttachment) => ({
+  ...attachment,
+  href: withAsset(attachment.file),
+  type: (attachment.type || 'other').toUpperCase()
+}));
 ---
 <BaseLayout
   title={post.data.title}
@@ -52,6 +60,28 @@ const heroImage = post.data.heroImage ? withAsset(post.data.heroImage) : undefin
           <slot />
         </div>
       </div>
+
+      {attachments.length > 0 && (
+        <section class="post-attachments mt-10" aria-labelledby="post-attachments-heading">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p class="font-mono text-[11px] uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">Attachments</p>
+              <h2 id="post-attachments-heading" class="mt-2 text-2xl font-semibold tracking-[-0.03em] text-zinc-950 dark:text-white">附件</h2>
+            </div>
+            <span class="text-sm text-zinc-500 dark:text-zinc-400">{attachments.length} 个文件</span>
+          </div>
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            {attachments.map((attachment) => (
+              <a href={attachment.href} class="attachment-card" target="_blank" rel="noreferrer">
+                <span class="attachment-type">{attachment.type}</span>
+                <span class="attachment-title">{attachment.title}</span>
+                {attachment.description && <span class="attachment-description">{attachment.description}</span>}
+                <span class="attachment-action">打开或下载</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div class="mt-10 grid gap-4 md:grid-cols-2">
         {previous ? (

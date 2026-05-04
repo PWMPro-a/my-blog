@@ -28,22 +28,98 @@ collections:
     slug: '{{year}}-{{month}}-{{day}}-{{slug}}'
     preview_path: posts/{{slug}}
     summary: '{{title}} · {{pubDate}}'
+    sortable_fields: [title, pubDate, updatedDate, draft, featured]
+    view_filters:
+      - label: 草稿
+        field: draft
+        pattern: true
+      - label: 已发布
+        field: draft
+        pattern: false
+      - label: 精选
+        field: featured
+        pattern: true
     fields:
-      - { label: 标题, name: title, widget: string }
-      - { label: 描述, name: description, widget: text }
-      - { label: 发布时间, name: pubDate, widget: datetime, format: 'YYYY-MM-DD', time_format: false }
-      - { label: 更新时间, name: updatedDate, widget: datetime, required: false, format: 'YYYY-MM-DD', time_format: false }
+      - label: 标题
+        name: title
+        widget: string
+        hint: 建议 30-60 个字符，发布后会用于页面标题、搜索结果和分享卡片。
+      - label: 描述
+        name: description
+        widget: text
+        hint: 建议写成 1-2 句可直接作为摘要的说明，约 80-160 个字符。
+      - label: 发布时间
+        name: pubDate
+        widget: datetime
+        format: 'YYYY-MM-DD'
+        time_format: false
+        hint: 发布文章时确认日期准确；未来日期会在发布前检查中提示。
+      - label: 更新时间
+        name: updatedDate
+        widget: datetime
+        required: false
+        format: 'YYYY-MM-DD'
+        time_format: false
       - label: 标签
         name: tags
         widget: list
         default: []
-      - { label: 草稿, name: draft, widget: boolean, default: false }
-      - { label: 精选, name: featured, widget: boolean, default: false }
-      - { label: 头图, name: heroImage, widget: image, required: false }
+        hint: 至少保留一个有效标签；避免空标签和仅大小写不同的重复标签。
+      - label: 草稿
+        name: draft
+        widget: boolean
+        default: true
+        hint: 写作和预览阶段建议保持开启；确认要公开后再改为关闭。
+      - label: 精选
+        name: featured
+        widget: boolean
+        default: false
+        hint: 精选文章会在前台重点展示；草稿文章不建议设为精选。
+      - label: 头图
+        name: heroImage
+        widget: image
+        required: false
+        hint: 建议使用横向图片，适合作为文章卡片和社交分享图；普通正文图片仍可在编辑器中上传。
+      - label: 附件
+        name: attachments
+        widget: list
+        required: false
+        summary: '{{fields.title}}'
+        hint: 上传 PDF、Word 原文附件；PDF 不做自动正文解析，DOCX 可用本地辅助命令转换后再复制正文。
+        fields:
+          - label: 附件名称
+            name: title
+            widget: string
+            hint: 展示在文章附件卡片中的名称。
+          - label: 文件
+            name: file
+            widget: file
+            media_folder: public/attachments/uploads
+            public_folder: /attachments/uploads
+            media_library:
+              config:
+                multiple: false
+            hint: 支持 PDF、DOC、DOCX；请不要上传视频、压缩包或可执行文件。
+          - label: 类型
+            name: type
+            widget: select
+            required: false
+            default: other
+            options:
+              - { label: PDF, value: pdf }
+              - { label: Word DOCX, value: docx }
+              - { label: Word DOC, value: doc }
+              - { label: 其他, value: other }
+            hint: 用于文章页显示类型标识，也会参与发布前检查。
+          - label: 说明
+            name: description
+            widget: text
+            required: false
+            hint: 可写一句说明附件内容或适用场景。
       - label: 正文
         name: body
         widget: markdown
-        hint: 图片可以使用媒体库上传；视频请上传到 B 站、YouTube、Cloudflare Stream 或 R2，并把支持的视频链接单独放一行。
+        hint: 图片可以使用媒体库上传；视频请上传到 B 站、YouTube、Cloudflare Stream 或 R2，并把支持的 HTTPS 视频链接单独放一行；PDF/Word 请使用上方附件字段。
   - name: topics
     label: 专题
     label_singular: 专题
@@ -55,12 +131,39 @@ collections:
     slug: '{{slug}}'
     preview_path: topics/{{slug}}
     summary: '{{title}} · {{posts | length}} 篇文章'
+    sortable_fields: [title, order, draft]
+    view_filters:
+      - label: 草稿专题
+        field: draft
+        pattern: true
+      - label: 已发布专题
+        field: draft
+        pattern: false
     fields:
-      - { label: 标题, name: title, widget: string }
-      - { label: 描述, name: description, widget: text }
-      - { label: 封面图, name: coverImage, widget: image, required: false }
-      - { label: 排序, name: order, widget: number, default: 999, value_type: int }
-      - { label: 草稿, name: draft, widget: boolean, default: false }
+      - label: 标题
+        name: title
+        widget: string
+        hint: 专题名称应短而清晰，方便在导航和文章关联里识别。
+      - label: 描述
+        name: description
+        widget: text
+        hint: 说明这个专题收集什么问题、适合怎样的读者浏览。
+      - label: 封面图
+        name: coverImage
+        widget: image
+        required: false
+        hint: 可选横向封面图；不填时使用文字卡片展示。
+      - label: 排序
+        name: order
+        widget: number
+        default: 999
+        value_type: int
+        hint: 数字越小越靠前。
+      - label: 草稿
+        name: draft
+        widget: boolean
+        default: false
+        hint: 未整理完成的专题先保持草稿，避免前台提前公开。
       - label: 相关文章
         name: posts
         widget: relation
@@ -70,8 +173,9 @@ collections:
         display_fields: [title]
         multiple: true
         required: false
+        hint: 从已有文章中选择要归入该专题的条目。
       - label: 正文
         name: body
         widget: markdown
         required: false
-        hint: 图片可以使用媒体库上传；视频请上传到 B 站、YouTube、Cloudflare Stream 或 R2，并把支持的视频链接单独放一行。
+        hint: 图片可以使用媒体库上传；视频请上传到 B 站、YouTube、Cloudflare Stream 或 R2，并把支持的 HTTPS 视频链接单独放一行。

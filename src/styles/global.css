@@ -116,6 +116,92 @@ html.dark .prose figcaption {
   color: #a1a1aa;
 }
 
+.post-attachments {
+  border: 1px solid rgba(212, 212, 216, 0.8);
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1.5rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+html.dark .post-attachments {
+  border-color: rgba(30, 41, 59, 0.95);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+}
+
+.attachment-card {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid rgba(212, 212, 216, 0.86);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.64);
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.attachment-card:hover {
+  border-color: rgba(127, 159, 187, 0.76);
+  transform: translateY(-1px);
+}
+
+html.dark .attachment-card {
+  border-color: rgba(51, 65, 85, 0.95);
+  background: rgba(15, 23, 42, 0.62);
+}
+
+html.dark .attachment-card:hover {
+  border-color: rgba(183, 206, 226, 0.62);
+}
+
+.attachment-type {
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(127, 159, 187, 0.14);
+  padding: 0.25rem 0.6rem;
+  color: #475569;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+html.dark .attachment-type {
+  background: rgba(183, 206, 226, 0.14);
+  color: #cbd5e1;
+}
+
+.attachment-title {
+  color: #18181b;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+html.dark .attachment-title {
+  color: #f8fafc;
+}
+
+.attachment-description {
+  color: #71717a;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+html.dark .attachment-description {
+  color: #a1a1aa;
+}
+
+.attachment-action {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+html.dark .attachment-action {
+  color: #b7cee2;
+}
+
 .video-embed {
   margin: 1.5rem 0;
   overflow: hidden;
