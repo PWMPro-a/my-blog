@@ -176,7 +176,7 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
             <div class="mb-5 flex items-center justify-between gap-3">
               <div>
                 <h3 class="text-lg font-semibold text-zinc-950 dark:text-white">留下你的评论</h3>
-                <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">支持游客评论与楼中回复，提交后需要管理员审核。</p>
+                <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">支持游客评论与楼中回复，提交后需要管理员审核。视频请粘贴 B 站、YouTube、Cloudflare Stream 或 R2 链接并单独放一行，不支持 HTML。</p>
               </div>
             </div>
             ${replyHint}
@@ -198,7 +198,7 @@ const commentsConfigJson = JSON.stringify(commentsConfig);
               ${turnstileBlock}
               ${feedback}
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <p class="text-xs leading-6 text-zinc-500 dark:text-zinc-400">请勿提交广告、灌水或与文章无关的内容。回复最多支持 ${config.maxDepth + 1} 层。</p>
+                <p class="text-xs leading-6 text-zinc-500 dark:text-zinc-400">请勿提交广告、灌水或与文章无关的内容。回复最多支持 ${config.maxDepth + 1} 层；视频外链需单独一行，HTML 会按文本显示。</p>
                 <button type="submit" class="rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white hover:bg-accent dark:bg-white dark:text-zinc-950 dark:hover:bg-accent dark:hover:text-zinc-950" ${state.submitting || !config.isTurnstileConfigured ? 'disabled' : ''}>${state.submitting ? '提交中…' : '提交评论'}</button>
               </div>
             </div>

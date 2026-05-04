@@ -5,6 +5,7 @@ import sitemap from '@astrojs/sitemap';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import rehypeVideoEmbeds from './src/lib/rehypeVideoEmbeds';
 
 export default defineConfig({
   site: 'https://ximo.qzz.io',
@@ -14,6 +15,7 @@ export default defineConfig({
     remarkPlugins: [remarkGfm],
     rehypePlugins: [
       rehypeSlug,
+      rehypeVideoEmbeds,
       [
         rehypeAutolinkHeadings,
         {

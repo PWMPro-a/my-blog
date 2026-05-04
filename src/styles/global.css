@@ -79,3 +79,37 @@ button {
 .heading-anchor:hover {
   opacity: 1;
 }
+
+.video-embed {
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border: 1px solid rgba(212, 212, 216, 0.8);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+html.dark .video-embed {
+  border-color: rgba(30, 41, 59, 0.95);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.video-embed iframe,
+.video-embed video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  background: #020617;
+}
+
+.video-embed figcaption {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  color: #71717a;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+html.dark .video-embed figcaption {
+  color: #a1a1aa;
+}

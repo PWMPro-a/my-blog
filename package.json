@@ -9,7 +9,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "deploy:check": "npm run check && npm run build",
+    "check:media": "node scripts/check-media-uploads.mjs",
+    "deploy:check": "npm run check:media && npm run check && npm run build",
     "worker:dev": "npm --prefix ./worker/decap-oauth run dev"
   },
   "dependencies": {

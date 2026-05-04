@@ -36,6 +36,10 @@ const adminConfigJson = JSON.stringify(adminConfig);
           <p class="mt-1">审核列表会展示文章 slug 与父评论摘要，便于快速判断回复语境。</p>
         </div>
         <div>
+          <p class="font-medium text-zinc-900 dark:text-white">视频预览</p>
+          <p class="mt-1">评论里的支持视频链接会按白名单渲染为预览；访客直接输入的 HTML 仍会显示为文本。</p>
+        </div>
+        <div>
           <p class="font-medium text-zinc-900 dark:text-white">鉴权方式</p>
           <p class="mt-1">仅允许白名单 GitHub 用户进入，Cookie 会话保存在 Worker 的 D1 数据库里。</p>
         </div>
