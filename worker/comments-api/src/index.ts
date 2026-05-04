@@ -68,14 +68,14 @@ function json(body: unknown, init: ResponseInit = {}) {
 }
 
 function redirect(location: string, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set('location', location);
+  headers.set('cache-control', 'no-store');
+
   return new Response(null, {
     ...init,
     status: init.status ?? 302,
-    headers: {
-      location,
-      'cache-control': 'no-store',
-      ...init.headers
-    }
+    headers
   });
 }
 
@@ -771,14 +771,10 @@ export default {
         }
 
         const { sessionToken } = await createAdminSession(env, user);
-        return redirect(env.ALLOWED_ADMIN_URL, {
-          headers: {
-            'set-cookie': [
-              `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
-              sessionCookie(sessionToken, 7 * 24 * 60 * 60)
-            ].join(', ')
-          }
-        });
+        const headers = new Headers();
+        headers.append('set-cookie', `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+        headers.append('set-cookie', sessionCookie(sessionToken, 7 * 24 * 60 * 60));
+        return redirect(env.ALLOWED_ADMIN_URL, { headers });
       } catch (oauthError) {
         const message = oauthError instanceof Error ? oauthError.message : 'unknown';
         return redirect(`${env.ALLOWED_ADMIN_URL}?error=${encodeURIComponent(message)}`);

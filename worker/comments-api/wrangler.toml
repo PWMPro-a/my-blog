@@ -7,7 +7,7 @@ workers_dev = true
 ALLOWED_ORIGIN = "https://ximo.qzz.io"
 ALLOWED_ADMIN_URL = "https://ximo.qzz.io/admin/comments/"
 PUBLIC_SITE_URL = "https://ximo.qzz.io"
-GITHUB_CLIENT_ID = "Ov23lig2yq0ZQq0ktioJ"
+GITHUB_CLIENT_ID = "Ov23liJmx2avHxTk6QAQ"
 GITHUB_OAUTH_REDIRECT_URI = "https://comments-api-worker.251873620.workers.dev/api/admin/callback"
 ADMIN_GITHUB_USERS = "PWMPro-a"
 
